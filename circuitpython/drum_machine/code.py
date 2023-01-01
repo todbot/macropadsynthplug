@@ -27,7 +27,7 @@
 #
 # To install:
 # - Copy this file and this whole directory to your CIRCUITPY drive
-# - Install other libraries with "circup install neopixel adafruit_display_text adafruit_midi"
+# - Install other libraries with "circup install neopixel adafruit_ticks adafruit_display_text adafruit_midi"
 #
 # Convert drum sounds to appropriate WAV format (mono, 22050 Hz, 16-bit signed) with command:
 #  sox sound.mp3 -b 16 -c 1 -r 22050 sound.wav
@@ -42,6 +42,7 @@ import displayio, terminalio
 import rainbowio
 import audiocore, audiomixer, audiopwmio
 import neopixel
+from adafruit_ticks import ticks_ms, ticks_diff, ticks_add
 from adafruit_display_text import bitmap_label as label
 import usb_midi
 import adafruit_midi
@@ -95,6 +96,7 @@ midi_uart_in = adafruit_midi.MIDI( midi_in=midi_uart) # , debug=False)
 midi_usb_in = adafruit_midi.MIDI( midi_in=usb_midi.ports[0])
 
 leds = neopixel.NeoPixel(board.NEOPIXEL, 12, brightness=0.3, auto_write=False)
+leds.fill(0xff00ff); leds.show()
 
 key_pins = (board.KEY1, board.KEY2, board.KEY3,
             board.KEY4, board.KEY5, board.KEY6,
@@ -113,6 +115,7 @@ else:
     speaker_en.switch_to_output(value=True)
 mixer = audiomixer.Mixer(voice_count=num_pads, sample_rate=22050, channel_count=1,
                          bits_per_sample=16, samples_signed=True, buffer_size=2048)
+time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
 audio.play(mixer) # attach mixer to audio playback
 
 
@@ -142,12 +145,9 @@ for t in (txt1, txt2, txt3, txt_emode1, txt_emode0, txt_patt,
     dispgroup.append(t)
 # display setup end
 
-def millis(): return supervisor.ticks_ms()  # I like millis
-
-
 # sequence state
 step_millis = 0 # derived from bpm, changed by "update_bpm()" below
-last_step_millis = millis()
+last_step_millis = ticks_ms()
 seq_pos = 0  # where in our sequence we are
 playing = False
 recording = False
@@ -155,7 +155,8 @@ recording = False
 # UI state
 pads_lit = [0] * num_pads  # list of drum keys that are being played
 pads_mute = [0] * num_pads # which pads are muted
-last_led_millis = 0  # last time we updated the LEDs
+pads_played = [0] * num_pads
+last_led_millis = ticks_ms()  # last time we updated the LEDs
 rec_pressed = False  # is REC button held, for deleting tracks
 mute_pressed = False  # is MUTE button held, for muting/unmuting tracks
 encoder_val_last = encoder.position
@@ -235,10 +236,10 @@ while True:
 
     # midi_receive()
 
-    now = millis()
+    now = ticks_ms()
 
     # LED handling
-    if now - last_led_millis > 10:  # update every 10 msecs
+    if ticks_diff(now, last_led_millis) > 10:  # update every 10 msecs
         last_led_millis = now
         leds[key_PLAY]   = 0x00FF00 if playing else 0x114400
         leds[key_RECORD] = 0xFF0000 if recording else 0x440044 if rec_pressed else 0x441100
@@ -253,20 +254,23 @@ while True:
 
     # Sequencer playing
     fudge = 2 # sigh
-    diff = now - last_step_millis
-    if diff > step_millis:
-        late_millis = diff - step_millis # how much are we over
-        last_step_millis = now - (late_millis//2) - fudge # attempt to make it up on next step
-
-        # tempo indicator (leds.show() called by LED handler)
-        if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
-        if seq_pos == 0: leds[key_TAP_TEMPO] = 0x3333FF # first beat indicator
+    diff = ticks_diff( now, last_step_millis )
+    if diff >= step_millis:
+        late_millis = ticks_diff( diff, step_millis )  # how much are we late
+        last_step_millis = ticks_add( now, -(late_millis//2) ) # attempt to make it up on next step
+        #last_step_millis = ticks_add( ticks_diff, -fudge )
 
         # play any sounds recorded for this step
         if playing:
             for i in range(num_pads):
-                play_drum(i, sequence[seq_pos][i] )  # FIXME: what about note-off
-            if(debug): print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
+                if not pads_played[i]:
+                    play_drum(i, sequence[seq_pos][i] )  # FIXME: what about note-off
+                pads_played[i] = 0
+        if(debug): print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
+
+        # tempo indicator (leds.show() called by LED handler)
+        if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
+        if seq_pos == 0: leds[key_TAP_TEMPO] = 0x3333FF # first beat indicator
 
         seq_pos = (seq_pos + 1) % num_steps # FIXME: let user choose?
 
@@ -279,11 +283,11 @@ while True:
             if key.pressed:
                 playing = not playing
                 if playing:
-                    last_playing_millis = now - step_millis  # start playing!
+                    last_playing_millis = ticks_add(now, -step_millis)  # start playing!
                     seq_pos = 0
                 else:  # we are stopped
                     recording = False # so turn off recording too
-                    print_sequence()  # "saving" it
+                    if debug: print_sequence()  # "saving" it
                 update_play()
 
         elif keynum == key_RECORD:
@@ -310,15 +314,14 @@ while True:
                     pads_mute[padnum] = not pads_mute[padnum]
                 # else trigger drum
                 else:
+                    play_drum( padnum, 1 )
                     if recording:
-                        sequence[ seq_pos ][padnum] = 1
-                    else:
-                        play_drum( padnum, 1 )
-
+                        pads_played[padnum] = 1
+                        sequence[ seq_pos-1 ][padnum] = 1   # save it
                     # and start recording on the beat if set to record
                     if recording and not playing:
                         playing = True
-                        last_playing_millis = millis() - step_millis
+                        last_playing_millis = ticks_add(ticks_ms(), -step_millis)
                         seq_pos = 0
 
             if key.released:
