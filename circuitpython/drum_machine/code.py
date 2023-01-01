@@ -51,10 +51,10 @@ from drum_patterns import *
 
 use_macrosynthplug = True
 
+patt_index = 0  # which sequence we're playing from our list of avail patterns
 bpm = 120  # default BPM
 steps_per_beat = 8  # divisions per beat: 8 = 32nd notes, 4 = 16th notes
 num_pads = 8
-patt_index = 0  # which sequence we're playing from our list of avail patterns
 
 sequence = make_sequence( patterns[patt_index] )
 num_steps = len(sequence)  # number of steps
@@ -143,19 +143,18 @@ def millis(): return supervisor.ticks_ms()  # I like millis
 steps_millis = 0 # derived from bpm, changed by "update_bpm()" below
 last_step_millis = millis()
 seq_pos = 0  # where in our sequence we are
-
 playing = False
 recording = False
 
 # UI state
-pads_pressed = [0] * num_pads  # list of drum keys currently being pressed down
 pads_lit = [0] * num_pads  # list of drum keys that are being played
-pads_mute = [0] * num_pads
+pads_mute = [0] * num_pads # which pads are muted
 last_led_millis = 0
 led_millis = 5  # how often to update the LEDs
 rec_pressed = False  # for deleting tracks
 mute_pressed = False  # for muting/unmuting tracks
 encoder_val_last = encoder.position
+encoder_mode = 0  # 0 = change bpm, 1 = change pattern
 
 # Load wave objects upfront to reduce play latency
 waves = [None] * num_pads
@@ -202,6 +201,17 @@ def update_bpm():
 def update_pattern():
     txt_patt.text = patterns[patt_index]['name']
 
+# for debugging
+def print_sequence():
+    print("    {")
+    print("        'name':'dump'")
+    print("        'len':", len(sequence))
+    print("        'base': [")
+    for i in range(len(sequence)):
+        print("            [" + ",".join('1' if e else '0' for e in sequence[i]) + "],")
+    print("        ]");
+    print("    }")
+
 update_play()
 update_pattern()
 update_bpm()
@@ -246,12 +256,6 @@ while True:
             for i in range(num_pads):
                 handle_sample(i, sequence[seq_pos][i] )
 
-            # if recording & pads were pressed,  add it to the _last_ step (the one just finished)
-            if recording:
-                for i in range(num_pads):
-                    sequence[ seq_pos-1 ][i] |= pads_pressed[i]
-                    pads_pressed[i] = 0  # and say we've used it up
-
             print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
 
         seq_pos = (seq_pos + 1) % num_steps # FIXME: let user choose?
@@ -272,6 +276,7 @@ while True:
                     seq_pos = 0
                 else:  # we are stopped
                     recording = False # so turn off recording too
+                    print_sequence()  # "saving" it
                 update_play()
 
         elif keynum == key_RECORD:
@@ -290,15 +295,19 @@ while True:
             padnum = keynum_to_padnum[keynum]
             # print("keynum:", keynum, "padnum:",padnum)
             if key.pressed:
-                if rec_pressed:  # erase sequence
+                # if REC button held while pad press, erase track
+                if rec_pressed:
                     for i in range(num_steps):
                         sequence[i][padnum] = 0
+                # if MUTE button held, mute/unmute track
                 elif mute_pressed:
                     pads_mute[padnum] = not pads_mute[padnum]
+                # else trigger drum
                 else:
-                    # trigger drum
-                    pads_pressed[padnum] = 1
-                    handle_sample( padnum, 1 )
+                    if recording:
+                        sequence[ seq_pos ][padnum] = 1
+                    else:
+                        handle_sample( padnum, 1 )
 
                     # and start recording on the beat if set to record
                     if recording and not playing:
@@ -307,13 +316,26 @@ while True:
                         seq_pos = 0
 
             if key.released:
-                pads_pressed[padnum] = 0
                 handle_sample( padnum, 0 )
 
-    # Encoder handling
+    # Encoder push handling
+    enc_sw = encoder_switch.events.get()
+    if enc_sw:
+        if enc_sw.pressed:
+            encoder_mode = (encoder_mode + 1) % 2
+        if encoder_mode == 1: # FIXME: remove magic numbers
+            pass
+
+    # Encoder turn handling
     encoder_val = encoder.position
     if encoder_val != encoder_val_last:
         encoder_delta = (encoder_val - encoder_val_last)
         encoder_val_last = encoder_val
-        bpm += encoder_delta
-        update_bpm()
+        if encoder_mode == 0:
+            bpm += encoder_delta
+            update_bpm()
+        elif encoder_mode == 1:
+            patt_index = (patt_index + encoder_delta) % len(patterns)
+            print("pattern:", patt_index)
+            sequence = make_sequence(patterns[patt_index])
+            update_pattern()
