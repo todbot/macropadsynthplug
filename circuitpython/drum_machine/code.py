@@ -1,17 +1,35 @@
 # macropadsynthplug drum machine code.py - play multiple samples concurrently, some looped, some not
 #
-# 5 Feb 2022 - @todbot / Tod Kurt - https://github.com/todbot/macropadsynthplug
+# 26 Dec 2022 - @todbot / Tod Kurt - https://github.com/todbot/macropadsynthplug
 #
-# Copy this file as "code.py" to your CIRCUITPY drive
-# Install "neopixel" library with "circup install neopixel"
+# Rotate macropad so keys are to the right, knob is top left
+# - Key next to macropad is PLAY/STOP, then RECORD, then MODE, then TAP TEMPO
+# - The bottom two rows of 4 keys are the drum triggers
 #
-# Convert files to appropriate WAV format (mono, 22050 Hz, 16-bit signed) with command:
-#  sox loop.mp3 -b 16 -c 1 -r 22050 loop.wav
-# or try:
-#  ffmpeg -i loop.mp3 -ac 1 -ar 22050 loop.wav  (but I think this needs codec spec'd
+#  +-------+------+------+------+------+
+#  |  ---  |      |      |      |      |
+#  | | O | | Play | Rec  | Mod  | Tap  |
+#  |  ---  |      |      |      |      |
+#  | ----- +------+------+------+------+
+#  | |   | |      |      |      |      |
+#  | |   | |  4   |  5   |  6   |  7   |
+#  | |   | |      |      |      |      |
+#  | |   | +------+------+------+------+
+#  | |   | |      |      |      |      |
+#  | |   | |  0   |  1   |  2   |  3   |
+#  | ----- |      |      |      |      |
+#  |-------+------+------+------+------+
+#
+#
+# To install:
+# - Copy this file and this whole directory to your CIRCUITPY drive
+# - Install other libraries with "circup install neopixel adafruit_display_text adafruit_midi"
+#
+# Convert drum sounds to appropriate WAV format (mono, 22050 Hz, 16-bit signed) with command:
+#  sox sound.mp3 -b 16 -c 1 -r 22050 sound.wav
 #
 
-print("macropadsynthplug drum machine!")
+print("macropadsynthplug drum machine start!")
 
 import time
 import supervisor
@@ -26,6 +44,19 @@ import adafruit_midi
 from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 
+from drum_patterns import *
+
+bpm = 120  # default BPM
+steps_per_beat = 8  # divisions per beat: 4 = 16th notes
+num_pads = 8
+
+patt_index = 0
+sequence = make_sequence( patterns[patt_index] )
+#sequence[0][4] = 5
+#print("seq:",sequence)
+#print("pat0:",patterns[0])
+num_steps = len(sequence)  # number of steps
+
 
 # map key number to wave file
 # a list of which samples to play on which keys,
@@ -33,23 +64,30 @@ from adafruit_midi.note_off import NoteOff
 # if a key has no sample, use (None,None)
 wav_files = (
     # filename,           loop?
-    ('wav/909kick4.wav', False),        # 0
-    ('wav/909clap1.wav', False),        # 1
-    ('wav/909snare2.wav', False),       # 2
+    ('wav/909kick4.wav', False),        # 0  # |....|x...|
+    ('wav/909clap1.wav', False),        # 1  # |....|.x..|
+    ('wav/909snare2.wav', False),       # 2  # |....|..x.|
     ('wav/909cym2.wav', False),         # 3
     ('wav/909hatclosed2.wav', False),   # 4
     ('wav/909hatopen5.wav', False),     # 5
-    ('wav/dnb21580_22k16b_160bpm.wav', True),  # 6
-    ('wav/drumloopA_22k16b_160bpm.wav',True),  # 7
-    ('wav/909cym2.wav', False),      # 8
-    ('wav/ohohoh_22k16b_160bpm.wav', True),    # 9
-    ('wav/secretguit_22k16b_160bpm.wav',True), # 10
-    ('wav/guit1403_22k16b_160bpm.wav', True),  # 11
+    ('wav/laser2.wav', False),  # 6
+    ('wav/laser2.wav',False),  # 7
 )
+
+# top row of keys is special
+key_PLAY = 2
+key_RECORD= 5
+key_MODE = 8
+key_TAP_TEMPO = 11
+# the rest of keys are drum pads
+keynum_to_padnum = (0, 4, -1, # pad nums go from bottom row of four: 0,1,2,3
+                    1, 5, -1, # then above that, next row of four 4,5,6,7
+                    2, 6, -1, # and top row are invalid pad nums (buttons used for transport)
+                    3, 7, -1)
 
 # macropadsynthplug!
 midi_uart = busio.UART(rx=board.SCL, tx=None, baudrate=31250, timeout=0.001)
-#midi_uart_in = smolmidi.MidiIn(midi_uart)
+#midi_uart_in = smolmidi.MidiIn(midi_uart) # can't do smolmidi because it wants port.readinto(buf,len)
 midi_uart_in = adafruit_midi.MIDI( midi_in=midi_uart) # , debug=False)
 midi_usb_in = adafruit_midi.MIDI( midi_in=usb_midi.ports[0])
 
@@ -64,45 +102,74 @@ keys = keypad.Keys(key_pins, value_when_pressed=False, pull=True)
 encoder = rotaryio.IncrementalEncoder(board.ENCODER_B, board.ENCODER_A)  # yes, reversed
 encoder_switch = keypad.Keys((board.ENCODER_SWITCH,), value_when_pressed=False, pull=True)
 
-num_voices = len(wav_files)
 audio = audiopwmio.PWMAudioOut(board.SDA) # macropadsynthplug!
-mixer = audiomixer.Mixer(voice_count=num_voices, sample_rate=22050, channel_count=1,
+mixer = audiomixer.Mixer(voice_count=num_pads, sample_rate=22050, channel_count=1,
                          bits_per_sample=16, samples_signed=True, buffer_size=2048)
 audio.play(mixer) # attach mixer to audio playback
 
 
 # display setup begin
+dw,dh = 64,128
 display = board.DISPLAY
 display.rotation = 90
 font = terminalio.FONT
 dispgroup = displayio.Group()
 display.show(dispgroup)
-text1 = label.Label(font, text="macropad", x=0, y=10)
-text2 = label.Label(font, text="synthplug", x=0, y=20)
-text3 = label.Label(font, text="drumachine", x=0, y=30)
-text_rcv = label.Label(font, text="recv:", x=0, y=60)
-text_rcv_val = label.Label(font, text="   ", x=10, y=70)
-dispgroup.append( text1 )
-dispgroup.append( text2 )
-dispgroup.append( text3 )
-dispgroup.append( text_rcv )
-dispgroup.append( text_rcv_val )
+txt1 = label.Label(font, text="macropad",      x=0,  y=10)
+txt2 = label.Label(font, text="synthplug",     x=0,  y=20)
+txt3 = label.Label(font, text="drumachine",    x=0,  y=30)
+txt_patt = label.Label(font, text="patt",      x=0,  y=45)
+txt_mode = label.Label(font, text="mode:",     x=0,  y=55)
+txt_mode_val = label.Label(font, text="stop",  x=30, y=55)
+txt_bpm = label.Label(font, text="bpm:",       x=0,  y=65)
+txt_bpm_val = label.Label(font, text=str(bpm), x=30, y=65)
+txt_rcv = label.Label(font, text="recv:",      x=0, y=110)
+txt_rcv_val = label.Label(font, text="   ",    x=10, y=120)
+for t in (txt1, txt2, txt3, txt_patt, txt_mode, txt_mode_val, txt_bpm,
+          txt_bpm_val, txt_rcv, txt_rcv_val):
+    dispgroup.append(t)
 # display setup end
 
-# play or stop a sample using the mixer
-def handle_sample(num, pressed):
-    voice = mixer.voice[num]   # get mixer voice
-    (wav_file, loopit) = wav_files[num]
-    if pressed:
-        if wav_file is not None:
-            wave = audiocore.WaveFile(open(wav_file,"rb"))
-            voice.play(wave,loop=loopit)
-    else: # released
-        if loopit:
-            voice.stop()  # only stop looping samples, others one-shot
+def millis(): return supervisor.ticks_ms()  # I like millis
 
+
+# sequence state
+steps_millis = 0 # derived from bpm, changed by "update_bpm()" below
+last_step_millis = millis()
+seq_pos = 0  # where in our sequence we are
+
+playing = False
+recording = False
+
+# UI state
+pads_pressed = [0] * num_pads  # list of drum keys currently being pressed down
+pads_lit = [0] * num_pads  # list of drum keys that are being played
+last_led_millis = 0
+led_millis = 5  # how often to update the LEDs
+del_button = False
+encoder_val_last = encoder.position
+
+# Load wave objects upfront to reduce play latency
+waves = [None] * num_pads
+for i in range(num_pads):
+    waves[i] = audiocore.WaveFile(open(wav_files[i][0],"rb"))
+
+# Play or stop a sample using the mixer
+def handle_sample(num, pressed):
+    pads_lit[num] = pressed
+    voice = mixer.voice[num]   # get mixer voice
+    #(wav_file, loopit) = wav_files[num]
+    if pressed:
+        #wave = audiocore.WaveFile(open(wav_file,"rb"))
+        voice.play(waves[num],loop=False)
+    else: # released
+        pass
+        #if loopit:
+        #voice.stop()  # only stop looping samples, others one-shot
+
+# Get midi from UART or USB
 def midi_receive():
-    while msg := midi_uart_in.receive() or midi_usb_in.receive():
+    while msg := midi_uart_in.receive() or midi_usb_in.receive():  # walrus!
         if msg is not None:
             print(time.monotonic(), msg)
             if isinstance(msg, NoteOn) and msg.velocity:
@@ -111,46 +178,130 @@ def midi_receive():
             if isinstance(msg,NoteOff) or (isinstance(msg, NoteOn) and msg.velocity==0):
                 handle_sample( msg.note % 12, False)
 
-def millis(): return supervisor.ticks_ms()  # I like millis
+def update_play():
+    if playing:
+        txt_mode_val.text = "play" if not recording else "odub"
+    else:
+        txt_mode_val.text = "stop" if not recording else "reco"  # FIXME:
 
-# scale a value by amount/256, expects an int, returns an int
-def scale8(val,amount):
-    return (val*amount)//256
+def update_bpm():
+    global steps_millis
+    # Beat timing assumes 4/4 time signature, e.g. 4 beats per measure, 1/4 note gets the beat
+    beat_time = 60 / bpm  # time length of a single beat
+    beat_millis = beat_time * 1000  # time length of single beat in milliseconds
+    steps_millis = int(beat_millis / steps_per_beat)  # time length of a beat subdivision, e.g. 1/16th note
+    txt_bpm_val.text = str(bpm)
+    # and keep "steps_millis" an int so diff math is fast
 
-# dim all leds by an (amount/256)
-def dim_leds_by(leds, amount):
-    leds[:] = [[max(scale8(i,amount),0) for i in l] for l in leds]
+def update_pattern():
+    txt_patt.text = patterns[patt_index]['name']
 
-#leds.fill(0x333333)
+update_play()
+update_pattern()
+update_bpm()
 
-led_last_update_millis = 0
-led_millis = 5
 
-keys_pressed = [False] * num_voices  # list of keys currently being pressed down
+print("macropadsynthplug drum machine ready!  bpm:", bpm, "steps_millis:", steps_millis, "steps:", num_steps)
+
 while True:
 
-    midi_receive()
+    # midi_receive()
 
     now = millis()
-    # update the LEDs, but only if keys pressed
-    if now - led_last_update_millis > led_millis:
-        led_last_update_millis = now
-        for i in range(num_voices):  # light up those keys that are pressed
-            if keys_pressed[i]:
-                leds[ i ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
-        dim_leds_by(leds, 250)  # fade everyone out slowly
+
+    # LED handling
+    if now - last_led_millis > led_millis:
+        last_led_millis = now
+        leds[key_PLAY] = 0x00FF00 if playing else 0x114400
+        leds[key_RECORD] = 0xFF0000 if recording else 0x441100
+        leds[key_MODE]   = 0x0033FF if del_button else 0x001144  # maybe another mode?
+        for i in range(num_pads):  # light up pressed drumpads
+            if pads_lit[i]:
+                leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
+        leds[:] = [[max(i-5,0) for i in l] for l in leds] # fade released drumpads slowly
         leds.show()
 
+
+    # Sequencer playing
+    diff = now - last_step_millis
+    if diff > steps_millis:
+        late_millis = max(0,diff - steps_millis) # how much are we over
+        last_step_millis = now - (late_millis//2)
+
+        # tempo indicator
+        if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
+        if seq_pos == 0: leds[key_TAP_TEMPO] = 0x3333FF # first beat indicator
+
+        if playing:
+            # play any sounds previously recorded for this step
+            for i in range(num_pads):
+                handle_sample(i, sequence[seq_pos][i] )
+
+            # if recording & pads were pressed,  add it to the _last_ step (the one just finished)
+            if recording:
+                for i in range(num_pads):
+                    sequence[ seq_pos-1 ][i] |= pads_pressed[i]
+                    pads_pressed[i] = 0  # and say we've used it up
+
+            print("%4d %2d %3d" % (diff, late_millis, seq_pos), sequence[seq_pos])
+
+        seq_pos = (seq_pos + 1) % num_steps # FIXME: let user choose?
 
     # Key handling
     key = keys.events.get()
     if key:
-        print("key:%d %d/%d %d" % (key.key_number, key.pressed, key.released, key.timestamp) )
+        keynum = key.key_number
+        # print("key:%d %d" % (keynum, key.pressed) )
 
-        if key.pressed:
-            handle_sample( key.key_number, True )
-            keys_pressed[ key.key_number ] = True
+        if keynum == key_PLAY:
+            if key.pressed:
+                playing = not playing
+                if recording and playing:
+                    print("erasing sequence")
+                    sequence = [[0] * num_pads for _ in range(num_steps)] # FIXME
+                if playing:
+                    last_playing_millis = now - steps_millis
+                    seq_pos = 0
+                else:  # stopped
+                    recording = False # turn off recording too
+                update_play()
 
-        if key.released:
-            handle_sample( key.key_number, False )
-            keys_pressed[ key.key_number ] = False
+        elif keynum == key_RECORD:
+            if key.pressed:
+                recording = not recording
+                update_play()
+
+        elif keynum == key_MODE: # dunno what to do wth this key yet
+            del_button = key.pressed
+
+        elif keynum == key_TAP_TEMPO:
+            pass
+
+        else: # else its a drumpad
+            padnum = keynum_to_padnum[keynum]
+            # print("keynum:", keynum, "padnum:",padnum)
+            if key.pressed:
+                if del_button:  # erase sequence
+                    for i in range(num_steps):
+                        sequence[i][padnum] = 0
+                else:
+                    pads_pressed[padnum] = 1
+                    handle_sample( padnum, 1 )
+
+                    # start recording on the beat if set to record
+                    if recording and not playing:
+                        playing = True
+                        last_playing_millis = millis() - steps_millis
+                        seq_pos = 0
+
+            if key.released:
+                pads_pressed[padnum] = 0
+                handle_sample( padnum, 0 )
+
+    # Encoder handling
+    encoder_val = encoder.position
+    if encoder_val != encoder_val_last:
+        encoder_delta = (encoder_val - encoder_val_last)
+        encoder_val_last = encoder_val
+        bpm += encoder_delta
+        update_bpm()
