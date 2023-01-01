@@ -37,7 +37,7 @@ print("macropadsynthplug drum machine async start!")
 import asyncio
 import time
 import supervisor
-import board, busio, keypad, rotaryio
+import board, busio, keypad, rotaryio, digitalio
 import displayio, terminalio
 import rainbowio
 import audiocore, audiomixer, audiopwmio
@@ -49,6 +49,8 @@ from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 
 from drum_patterns import *
+
+use_macrosynthplug = False
 
 bpm = 120  # default BPM
 steps_per_beat = 8  # divisions per beat: 8 = 32nd notes, 4 = 16th notes
@@ -102,7 +104,12 @@ keys = keypad.Keys(key_pins, value_when_pressed=False, pull=True)
 encoder = rotaryio.IncrementalEncoder(board.ENCODER_B, board.ENCODER_A)  # yes, reversed
 encoder_switch = keypad.Keys((board.ENCODER_SWITCH,), value_when_pressed=False, pull=True)
 
-audio = audiopwmio.PWMAudioOut(board.SDA) # macropadsynthplug!
+if use_macrosynthplug:
+    audio = audiopwmio.PWMAudioOut(board.SDA) # macropadsynthplug!
+else:
+    audio = audiopwmio.PWMAudioOut(board.SPEAKER) # built-in tiny spkr
+    speaker_en = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
+    speaker_en.switch_to_output(value=True)
 mixer = audiomixer.Mixer(voice_count=num_pads, sample_rate=22050, channel_count=1,
                          bits_per_sample=16, samples_signed=True, buffer_size=2048)
 audio.play(mixer) # attach mixer to audio playback
