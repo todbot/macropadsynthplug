@@ -49,7 +49,7 @@ from adafruit_midi.note_off import NoteOff
 
 from drum_patterns import *
 
-use_macrosynthplug = False
+use_macrosynthplug = True
 
 bpm = 120  # default BPM
 steps_per_beat = 8  # divisions per beat: 8 = 32nd notes, 4 = 16th notes
@@ -78,7 +78,7 @@ wav_files = (
 # top row of keys is special
 key_PLAY = 2
 key_RECORD= 5
-key_MODE = 8
+key_MUTE = 8
 key_TAP_TEMPO = 11
 # the rest of keys are drum pads
 keynum_to_padnum = (0, 4, -1, # pad nums go from bottom row of four: 0,1,2,3
@@ -150,9 +150,11 @@ recording = False
 # UI state
 pads_pressed = [0] * num_pads  # list of drum keys currently being pressed down
 pads_lit = [0] * num_pads  # list of drum keys that are being played
+pads_mute = [0] * num_pads
 last_led_millis = 0
 led_millis = 5  # how often to update the LEDs
 rec_pressed = False  # for deleting tracks
+mute_pressed = False  # for muting/unmuting tracks
 encoder_val_last = encoder.position
 
 # Load wave objects upfront to reduce play latency
@@ -164,7 +166,7 @@ for i in range(num_pads):
 def handle_sample(num, pressed):
     pads_lit[num] = pressed
     voice = mixer.voice[num]   # get mixer voice
-    if pressed:
+    if pressed and not pads_mute[num]:
         voice.play(waves[num],loop=False)
     else: # released
         pass
@@ -218,8 +220,10 @@ while True:
         last_led_millis = now
         leds[key_PLAY]   = 0x00FF00 if playing else 0x114400
         leds[key_RECORD] = 0xFF0000 if recording else 0x440044 if rec_pressed else 0x441100
-        leds[key_MODE]   = 0x001144  # maybe another mode?
+        leds[key_MUTE]   = 0x001144  # mute mode button
         for i in range(num_pads):  # light up pressed drumpads
+            if mute_pressed:  # show mute state instead
+                leds[ keynum_to_padnum.index(i) ] = 0x000000 if pads_mute[i] else 0x001144
             if pads_lit[i]:
                 leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
         leds[:] = [[max(i-5,0) for i in l] for l in leds] # fade released drumpads slowly
@@ -231,8 +235,7 @@ while True:
     diff = now - last_step_millis
     if diff > steps_millis:
         late_millis = diff - steps_millis # how much are we over
-        last_step_millis = now - late_millis - fudge
-        #last_step_millis = now - (late_millis//2)
+        last_step_millis = now - (late_millis//2) - fudge
 
         # tempo indicator
         if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
@@ -263,39 +266,41 @@ while True:
             if key.pressed:
                 playing = not playing
                 if recording and playing:
-                    print("maybe erasing sequence?")
-                    #sequence = [[0] * num_pads for _ in range(num_steps)] # FIXME
+                    pass  # maybe erasing sequence?
                 if playing:
                     last_playing_millis = now - steps_millis
                     seq_pos = 0
-                else:  # stopped
-                    recording = False # turn off recording too
+                else:  # we are stopped
+                    recording = False # so turn off recording too
                 update_play()
 
         elif keynum == key_RECORD:
             rec_pressed = key.pressed
-            if key.pressed:
-                recording = not recording
+            if rec_pressed:
+                recording = not recording # toggle record state
                 update_play()
 
-        elif keynum == key_MODE: # dunno what to do wth this key yet
-            pass
+        elif keynum == key_MUTE:
+            mute_pressed = key.pressed
 
         elif keynum == key_TAP_TEMPO:
             pass
 
-        else: # else its a drumpad
+        else: # else its a drumpad, either trigger, erase track, or mute track
             padnum = keynum_to_padnum[keynum]
             # print("keynum:", keynum, "padnum:",padnum)
             if key.pressed:
                 if rec_pressed:  # erase sequence
                     for i in range(num_steps):
                         sequence[i][padnum] = 0
+                elif mute_pressed:
+                    pads_mute[padnum] = not pads_mute[padnum]
                 else:
+                    # trigger drum
                     pads_pressed[padnum] = 1
                     handle_sample( padnum, 1 )
 
-                    # start recording on the beat if set to record
+                    # and start recording on the beat if set to record
                     if recording and not playing:
                         playing = True
                         last_playing_millis = millis() - steps_millis

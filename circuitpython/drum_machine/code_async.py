@@ -50,7 +50,7 @@ from adafruit_midi.note_off import NoteOff
 
 from drum_patterns import *
 
-use_macrosynthplug = False
+use_macrosynthplug = True
 
 bpm = 120  # default BPM
 steps_per_beat = 8  # divisions per beat: 8 = 32nd notes, 4 = 16th notes
@@ -215,7 +215,7 @@ async def update_leds():
         await asyncio.sleep(0.01)  # Let another task run.
 
 async def monitor_controls():
-    global playing, recording, bpm, rec_pressed, last_playing_millis
+    global playing, recording, bpm, rec_pressed, last_playing_millis, seq_pos
 
     encoder_val_last = encoder.position
 
