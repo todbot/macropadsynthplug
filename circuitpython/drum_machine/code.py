@@ -5,9 +5,10 @@
 # Rotate macropad so keys are to the right, knob is top left
 # - Key next to macropad is PLAY/STOP,
 # - Then RECORD key
-# - Then MUTE key (unimplemented)
+# - Then MUTE key
 # - Then TEMPO key
 # - The bottom two rows of 4 keys are the drum triggers
+# - Push encoder to switch between pattern changing mode & BPM changing mode
 #
 #  +-------+------+------+------+------+
 #  |  ---  |      |      |      |      |
@@ -50,6 +51,7 @@ from adafruit_midi.note_off import NoteOff
 from drum_patterns import *
 
 use_macrosynthplug = True
+debug = True
 
 patt_index = 0  # which sequence we're playing from our list of avail patterns
 bpm = 120  # default BPM
@@ -124,15 +126,19 @@ display.show(dispgroup)
 txt1 = label.Label(font, text="macropad",      x=0,  y=10)
 txt2 = label.Label(font, text="synthplug",     x=0,  y=20)
 txt3 = label.Label(font, text="drumachine",    x=0,  y=30)
-txt_patt = label.Label(font, text="patt",      x=0,  y=45)
-txt_mode = label.Label(font, text="mode:",     x=0,  y=60)
-txt_mode_val = label.Label(font, text="stop",  x=30, y=60)
-txt_bpm = label.Label(font, text="bpm:",       x=0,  y=70)
-txt_bpm_val = label.Label(font, text=str(bpm), x=30, y=70)
-txt_rcv = label.Label(font, text="recv:",      x=0, y=110)
+
+#txt_mode = label.Label(font, text="n:",      x=0,  y=45)
+txt_mode_val = label.Label(font, text="stop",  x=40, y=45)
+
+txt_emode1 = label.Label(font,text=">",        x=0,  y=60)
+txt_patt = label.Label(font, text="patt",      x=8,  y=60)
+txt_emode0 = label.Label(font,text=" ",        x=0,  y=75)
+txt_bpm = label.Label(font, text="bpm:",       x=8,  y=75)
+txt_bpm_val = label.Label(font, text=str(bpm), x=35, y=75)
+txt_rcv = label.Label(font, text="midi:",      x=0, y=115)
 txt_rcv_val = label.Label(font, text="   ",    x=10, y=120)
-for t in (txt1, txt2, txt3, txt_patt, txt_mode, txt_mode_val, txt_bpm,
-          txt_bpm_val, txt_rcv, txt_rcv_val):
+for t in (txt1, txt2, txt3, txt_emode1, txt_emode0, txt_patt,
+          txt_mode_val, txt_bpm, txt_bpm_val, txt_rcv, txt_rcv_val):
     dispgroup.append(t)
 # display setup end
 
@@ -154,7 +160,7 @@ led_millis = 5  # how often to update the LEDs
 rec_pressed = False  # for deleting tracks
 mute_pressed = False  # for muting/unmuting tracks
 encoder_val_last = encoder.position
-encoder_mode = 0  # 0 = change bpm, 1 = change pattern
+encoder_mode = 1  # 0 = change bpm, 1 = change pattern
 
 # Load wave objects upfront to reduce play latency
 waves = [None] * num_pads
@@ -200,6 +206,15 @@ def update_bpm():
 
 def update_pattern():
     txt_patt.text = patterns[patt_index]['name']
+
+def update_encmode():
+    if encoder_mode == 0:
+        txt_emode0.text = '>'
+        txt_emode1.text = ' '
+    elif encoder_mode == 1:
+        txt_emode0.text = ' '
+        txt_emode1.text = '>'
+
 
 # for debugging
 def print_sequence():
@@ -256,7 +271,7 @@ while True:
             for i in range(num_pads):
                 handle_sample(i, sequence[seq_pos][i] )
 
-            print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
+            if(debug): print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
 
         seq_pos = (seq_pos + 1) % num_steps # FIXME: let user choose?
 
@@ -323,8 +338,7 @@ while True:
     if enc_sw:
         if enc_sw.pressed:
             encoder_mode = (encoder_mode + 1) % 2
-        if encoder_mode == 1: # FIXME: remove magic numbers
-            pass
+            update_encmode()
 
     # Encoder turn handling
     encoder_val = encoder.position
