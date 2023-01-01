@@ -146,7 +146,7 @@ def millis(): return supervisor.ticks_ms()  # I like millis
 
 
 # sequence state
-steps_millis = 0 # derived from bpm, changed by "update_bpm()" below
+step_millis = 0 # derived from bpm, changed by "update_bpm()" below
 last_step_millis = millis()
 seq_pos = 0  # where in our sequence we are
 playing = False
@@ -155,28 +155,25 @@ recording = False
 # UI state
 pads_lit = [0] * num_pads  # list of drum keys that are being played
 pads_mute = [0] * num_pads # which pads are muted
-last_led_millis = 0
-led_millis = 5  # how often to update the LEDs
-rec_pressed = False  # for deleting tracks
-mute_pressed = False  # for muting/unmuting tracks
+last_led_millis = 0  # last time we updated the LEDs
+rec_pressed = False  # is REC button held, for deleting tracks
+mute_pressed = False  # is MUTE button held, for muting/unmuting tracks
 encoder_val_last = encoder.position
 encoder_mode = 1  # 0 = change bpm, 1 = change pattern
 
-# Load wave objects upfront to reduce play latency
+# Load wave objects upfront in attempt to reduce play latency
 waves = [None] * num_pads
 for i in range(num_pads):
     waves[i] = audiocore.WaveFile(open(wav_files[i][0],"rb"))  # ignore 'loopit'
 
-# Play or stop a sample using the mixer
-def handle_sample(num, pressed):
+# play a drum sample, either by sequencer or pressing pads
+def play_drum(num, pressed):
     pads_lit[num] = pressed
     voice = mixer.voice[num]   # get mixer voice
     if pressed and not pads_mute[num]:
         voice.play(waves[num],loop=False)
     else: # released
-        pass
-        #if loopit:
-        #voice.stop()  # only stop looping samples, others one-shot
+        pass   # not doing this
 
 # Get midi from UART or USB
 def midi_receive():
@@ -185,38 +182,37 @@ def midi_receive():
             print(time.monotonic(), msg)
             if isinstance(msg, NoteOn) and msg.velocity:
                 print("noteOn:",msg.note, msg.note % 12)
-                handle_sample( msg.note % 12, True)
+                play_drum( msg.note % 12, True)
             if isinstance(msg,NoteOff) or (isinstance(msg, NoteOn) and msg.velocity==0):
-                handle_sample( msg.note % 12, False)
+                play_drum( msg.note % 12, False)
 
+# update step_millis and display
+def update_bpm():
+    global step_millis
+    # Beat timing assumes 4/4 time signature, e.g. 4 beats per measure, 1/4 note gets the beat
+    beat_time = 60 / bpm  # time length of a single beat
+    beat_millis = beat_time * 1000  # time length of single beat in milliseconds
+    step_millis = int(beat_millis / steps_per_beat)  # time length of a beat subdivision, e.g. 1/16th note
+    txt_bpm_val.text = str(bpm)
+    # and keep "step_millis" an int so diff math is fast
+
+# update display
 def update_play():
     if playing:
         txt_mode_val.text = "play" if not recording else "odub"
     else:
         txt_mode_val.text = "stop" if not recording else "reco"  # FIXME:
 
-def update_bpm():
-    global steps_millis
-    # Beat timing assumes 4/4 time signature, e.g. 4 beats per measure, 1/4 note gets the beat
-    beat_time = 60 / bpm  # time length of a single beat
-    beat_millis = beat_time * 1000  # time length of single beat in milliseconds
-    steps_millis = int(beat_millis / steps_per_beat)  # time length of a beat subdivision, e.g. 1/16th note
-    txt_bpm_val.text = str(bpm)
-    # and keep "steps_millis" an int so diff math is fast
-
+# update display
 def update_pattern():
     txt_patt.text = patterns[patt_index]['name']
 
+# update display
 def update_encmode():
-    if encoder_mode == 0:
-        txt_emode0.text = '>'
-        txt_emode1.text = ' '
-    elif encoder_mode == 1:
-        txt_emode0.text = ' '
-        txt_emode1.text = '>'
+    txt_emode0.text = '>' if encoder_mode==0 else ' '
+    txt_emode1.text = '>' if encoder_mode==1 else ' '
 
-
-# for debugging
+# for debugging, print out current sequence when stopped
 def print_sequence():
     print("    {")
     print("        'name':'dump'")
@@ -227,12 +223,13 @@ def print_sequence():
     print("        ]");
     print("    }")
 
+# startup
+update_bpm()
 update_play()
 update_pattern()
-update_bpm()
+update_encmode()
 
-
-print("macropadsynthplug drum machine ready!  bpm:", bpm, "steps_millis:", steps_millis, "steps:", num_steps)
+print("macropadsynthplug drum machine ready!  bpm:", bpm, "step_millis:", step_millis, "steps:", num_steps)
 
 while True:
 
@@ -241,7 +238,7 @@ while True:
     now = millis()
 
     # LED handling
-    if now - last_led_millis > led_millis:
+    if now - last_led_millis > 10:  # update every 10 msecs
         last_led_millis = now
         leds[key_PLAY]   = 0x00FF00 if playing else 0x114400
         leds[key_RECORD] = 0xFF0000 if recording else 0x440044 if rec_pressed else 0x441100
@@ -249,28 +246,26 @@ while True:
         for i in range(num_pads):  # light up pressed drumpads
             if mute_pressed:  # show mute state instead
                 leds[ keynum_to_padnum.index(i) ] = 0x000000 if pads_mute[i] else 0x001144
-            if pads_lit[i]:
+            if pads_lit[i]:   # also show pads being triggered, in nice JP-approved rainbows
                 leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
-        leds[:] = [[max(i-5,0) for i in l] for l in leds] # fade released drumpads slowly
+        leds[:] = [[max(i-10,0) for i in l] for l in leds] # fade released drumpads slowly
         leds.show()
 
-    fudge = 2
-
     # Sequencer playing
+    fudge = 2 # sigh
     diff = now - last_step_millis
-    if diff > steps_millis:
-        late_millis = diff - steps_millis # how much are we over
-        last_step_millis = now - (late_millis//2) - fudge
+    if diff > step_millis:
+        late_millis = diff - step_millis # how much are we over
+        last_step_millis = now - (late_millis//2) - fudge # attempt to make it up on next step
 
-        # tempo indicator
+        # tempo indicator (leds.show() called by LED handler)
         if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
         if seq_pos == 0: leds[key_TAP_TEMPO] = 0x3333FF # first beat indicator
 
+        # play any sounds recorded for this step
         if playing:
-            # play any sounds previously recorded for this step
             for i in range(num_pads):
-                handle_sample(i, sequence[seq_pos][i] )
-
+                play_drum(i, sequence[seq_pos][i] )  # FIXME: what about note-off
             if(debug): print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
 
         seq_pos = (seq_pos + 1) % num_steps # FIXME: let user choose?
@@ -279,15 +274,12 @@ while True:
     key = keys.events.get()
     if key:
         keynum = key.key_number
-        # print("key:%d %d" % (keynum, key.pressed) )
 
         if keynum == key_PLAY:
             if key.pressed:
                 playing = not playing
-                if recording and playing:
-                    pass  # maybe erasing sequence?
                 if playing:
-                    last_playing_millis = now - steps_millis
+                    last_playing_millis = now - step_millis  # start playing!
                     seq_pos = 0
                 else:  # we are stopped
                     recording = False # so turn off recording too
@@ -308,7 +300,6 @@ while True:
 
         else: # else its a drumpad, either trigger, erase track, or mute track
             padnum = keynum_to_padnum[keynum]
-            # print("keynum:", keynum, "padnum:",padnum)
             if key.pressed:
                 # if REC button held while pad press, erase track
                 if rec_pressed:
@@ -322,22 +313,22 @@ while True:
                     if recording:
                         sequence[ seq_pos ][padnum] = 1
                     else:
-                        handle_sample( padnum, 1 )
+                        play_drum( padnum, 1 )
 
                     # and start recording on the beat if set to record
                     if recording and not playing:
                         playing = True
-                        last_playing_millis = millis() - steps_millis
+                        last_playing_millis = millis() - step_millis
                         seq_pos = 0
 
             if key.released:
-                handle_sample( padnum, 0 )
+                play_drum( padnum, 0 ) # don't strictly need this
 
     # Encoder push handling
     enc_sw = encoder_switch.events.get()
     if enc_sw:
         if enc_sw.pressed:
-            encoder_mode = (encoder_mode + 1) % 2
+            encoder_mode = (encoder_mode + 1) % 2  # only two modes for encoder currently
             update_encmode()
 
     # Encoder turn handling
@@ -345,10 +336,10 @@ while True:
     if encoder_val != encoder_val_last:
         encoder_delta = (encoder_val - encoder_val_last)
         encoder_val_last = encoder_val
-        if encoder_mode == 0:
+        if encoder_mode == 0:  # mode 0 == update BPM
             bpm += encoder_delta
             update_bpm()
-        elif encoder_mode == 1:
+        elif encoder_mode == 1:  # mode 1 == change pattern
             patt_index = (patt_index + encoder_delta) % len(patterns)
             print("pattern:", patt_index)
             sequence = make_sequence(patterns[patt_index])
