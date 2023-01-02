@@ -11408,6 +11408,52 @@ Source: http://www.diodes.com/datasheets/ds23001.pdf</description>
 </deviceset>
 </devicesets>
 </library>
+<library name="frames" urn="urn:adsk.eagle:library:229">
+<description>&lt;b&gt;Frames for Sheet and Layout&lt;/b&gt;</description>
+<packages>
+</packages>
+<symbols>
+<symbol name="A4L-LOC" urn="urn:adsk.eagle:symbol:13874/1" library_version="1">
+<wire x1="256.54" y1="3.81" x2="256.54" y2="8.89" width="0.1016" layer="94"/>
+<wire x1="256.54" y1="8.89" x2="256.54" y2="13.97" width="0.1016" layer="94"/>
+<wire x1="256.54" y1="13.97" x2="256.54" y2="19.05" width="0.1016" layer="94"/>
+<wire x1="256.54" y1="19.05" x2="256.54" y2="24.13" width="0.1016" layer="94"/>
+<wire x1="161.29" y1="3.81" x2="161.29" y2="24.13" width="0.1016" layer="94"/>
+<wire x1="161.29" y1="24.13" x2="215.265" y2="24.13" width="0.1016" layer="94"/>
+<wire x1="215.265" y1="24.13" x2="256.54" y2="24.13" width="0.1016" layer="94"/>
+<wire x1="246.38" y1="3.81" x2="246.38" y2="8.89" width="0.1016" layer="94"/>
+<wire x1="246.38" y1="8.89" x2="256.54" y2="8.89" width="0.1016" layer="94"/>
+<wire x1="246.38" y1="8.89" x2="215.265" y2="8.89" width="0.1016" layer="94"/>
+<wire x1="215.265" y1="8.89" x2="215.265" y2="3.81" width="0.1016" layer="94"/>
+<wire x1="215.265" y1="8.89" x2="215.265" y2="13.97" width="0.1016" layer="94"/>
+<wire x1="215.265" y1="13.97" x2="256.54" y2="13.97" width="0.1016" layer="94"/>
+<wire x1="215.265" y1="13.97" x2="215.265" y2="19.05" width="0.1016" layer="94"/>
+<wire x1="215.265" y1="19.05" x2="256.54" y2="19.05" width="0.1016" layer="94"/>
+<wire x1="215.265" y1="19.05" x2="215.265" y2="24.13" width="0.1016" layer="94"/>
+<text x="217.17" y="15.24" size="2.54" layer="94">&gt;DRAWING_NAME</text>
+<text x="217.17" y="10.16" size="2.286" layer="94">&gt;LAST_DATE_TIME</text>
+<text x="230.505" y="5.08" size="2.54" layer="94">&gt;SHEET</text>
+<text x="216.916" y="4.953" size="2.54" layer="94">Sheet:</text>
+<frame x1="0" y1="0" x2="260.35" y2="179.07" columns="6" rows="4" layer="94"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="A4L-LOC" urn="urn:adsk.eagle:component:13926/1" prefix="FRAME" uservalue="yes" library_version="1">
+<description>&lt;b&gt;FRAME&lt;/b&gt;&lt;p&gt;
+DIN A4, landscape with location and doc. field</description>
+<gates>
+<gate name="G$1" symbol="A4L-LOC" x="0" y="0"/>
+</gates>
+<devices>
+<device name="">
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -11441,6 +11487,7 @@ Source: http://www.diodes.com/datasheets/ds23001.pdf</description>
 <part name="IC1" library="optocoupler" deviceset="H11L*M" device="S" package3d_urn="urn:adsk.eagle:package:21970/1" override_package3d_urn="urn:adsk.eagle:package:38569067/2" override_package_urn="urn:adsk.eagle:footprint:21929/1" technology="1"/>
 <part name="+3V2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
 <part name="D1" library="diode" library_urn="urn:adsk.eagle:library:210" deviceset="DIODE-" device="SOD123" package3d_urn="urn:adsk.eagle:package:43420/1" value="1N4148"/>
+<part name="FRAME2" library="frames" library_urn="urn:adsk.eagle:library:229" deviceset="A4L-LOC" device="" value="test"/>
 </parts>
 <sheets>
 <sheet>
@@ -11450,6 +11497,7 @@ StemmaQT pins are connected to:
 - SDA - GP20 - UART1 TX - PWM2B
 - SCL - GP21 - UART1 RX - PWM2A</text>
 <text x="-10.16" y="22.86" size="1.778" layer="97">From Figure 3.4.1 of "Hardware Design with RP2040" </text>
+<text x="71.12" y="-22.86" size="2.1844" layer="94" ratio="13">2022 @todbot / Tod Kurt</text>
 </plain>
 <instances>
 <instance part="CONN1" gate="G$1" x="-35.56" y="53.34" smashed="yes" rot="MR0">
@@ -11533,6 +11581,11 @@ StemmaQT pins are connected to:
 <instance part="D1" gate="G$1" x="35.56" y="78.74" smashed="yes" rot="R90">
 <attribute name="NAME" x="32.0294" y="74.676" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="34.0614" y="74.676" size="1.778" layer="96" rot="R90"/>
+</instance>
+<instance part="FRAME2" gate="G$1" x="-93.98" y="-27.94" smashed="yes">
+<attribute name="DRAWING_NAME" x="123.19" y="-12.7" size="2.54" layer="94"/>
+<attribute name="LAST_DATE_TIME" x="123.19" y="-17.78" size="2.286" layer="94"/>
+<attribute name="SHEET" x="136.525" y="-22.86" size="2.54" layer="94"/>
 </instance>
 </instances>
 <busses>
