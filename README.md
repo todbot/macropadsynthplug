@@ -59,6 +59,18 @@ Seems like fun?  I have built many RP2040-based little hardware synths, like:
 
 and wanted the MacroPad RP2040 to join in the fun.
 
+## Does this work for other boards with StemmaQT?
+
+Short answer: not really
+
+For any non-RP2040-based board, this almost definitely will not work.
+
+And while the RP2040 is a very configuraable, not all functions are availbe on all pins.
+So it probably won't work on other RP2040-based boards too.  For instance:
+
+- QTPy RP2040?  Sorta. Its StemmaQT SDA/SCL is on GPIO22/23, which has PWM but no UART RX
+- KB2040 "Keeboar"? Yes! Its StemmaQT SDA/SCL is on GPIO12/13, which has PWM & UART0 RX!
+
 
 ## Are these for sale?
 
