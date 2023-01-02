@@ -35,7 +35,7 @@
 
 print("macropadsynthplug drum machine start!")
 
-import time
+import time, os
 import supervisor
 import board, busio, keypad, rotaryio, digitalio
 import displayio, terminalio
@@ -51,6 +51,8 @@ from adafruit_midi.note_off import NoteOff
 
 from drum_patterns import *
 
+#time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
+
 use_macrosynthplug = True
 debug = True
 
@@ -59,24 +61,9 @@ bpm = 120  # default BPM
 steps_per_beat = 8  # divisions per beat: 8 = 32nd notes, 4 = 16th notes
 num_pads = 8
 
-sequence = make_sequence( patterns[patt_index] )
-num_steps = len(sequence)  # number of steps
-
-# map key number to wave file
-# a list of which samples to play on which keys,
-# and if the sample should loop or not
-# if a key has no sample, use (None,None)
-wav_files = (
-    # filename,           loop?
-    ('wav/909kick4.wav', False),        # 0  # |....|x...|
-    ('wav/909clap1.wav', False),        # 1  # |....|.x..|
-    ('wav/909snare2.wav', False),       # 2  # |....|..x.|
-    ('wav/909cym2.wav', False),         # 3
-    ('wav/909hatclosed2a.wav', False),  # 4
-    ('wav/909hatopen5.wav', False),     # 5
-    ('wav/laser2.wav', False),  # 6
-    ('wav/laser2.wav',False),  # 7
-)
+#
+# MacroPad key layout
+#
 
 # top row of keys is special
 key_PLAY = 2
@@ -88,6 +75,9 @@ keynum_to_padnum = (0, 4, -1, # pad nums go from bottom row of four: 0,1,2,3
                     1, 5, -1, # then above that, next row of four 4,5,6,7
                     2, 6, -1, # and top row are invalid pad nums (buttons used for transport)
                     3, 7, -1)
+#
+# Set up hardware
+#
 
 # macropadsynthplug!
 midi_uart = busio.UART(rx=board.SCL, tx=None, baudrate=31250, timeout=0.001)
@@ -115,7 +105,6 @@ else:
     speaker_en.switch_to_output(value=True)
 mixer = audiomixer.Mixer(voice_count=num_pads, sample_rate=22050, channel_count=1,
                          bits_per_sample=16, samples_signed=True, buffer_size=2048)
-time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
 audio.play(mixer) # attach mixer to audio playback
 
 
@@ -130,20 +119,23 @@ txt1 = label.Label(font, text="macropad",      x=0,  y=10)
 txt2 = label.Label(font, text="synthplug",     x=0,  y=20)
 txt3 = label.Label(font, text="drumachine",    x=0,  y=30)
 
-#txt_mode = label.Label(font, text="n:",      x=0,  y=45)
 txt_mode_val = label.Label(font, text="stop",  x=40, y=45)
 
-txt_emode1 = label.Label(font,text=">",        x=0,  y=60)
+txt_emode0 = label.Label(font,text=">",        x=0,  y=60)
 txt_patt = label.Label(font, text="patt",      x=8,  y=60)
-txt_emode0 = label.Label(font,text=" ",        x=0,  y=75)
-txt_bpm = label.Label(font, text="bpm:",       x=8,  y=75)
-txt_bpm_val = label.Label(font, text=str(bpm), x=35, y=75)
+txt_emode1 = label.Label(font,text=" ",        x=0,  y=75)
+txt_kit = label.Label(font, text="kitt",       x=8,  y=75)
+txt_emode2 = label.Label(font,text=" ",        x=0,  y=90)
+txt_bpm = label.Label(font, text="bpm:",       x=8,  y=90)
+txt_bpm_val = label.Label(font, text=str(bpm), x=35, y=90)
+
 txt_rcv = label.Label(font, text="midi:",      x=0, y=115)
 txt_rcv_val = label.Label(font, text="   ",    x=10, y=120)
-for t in (txt1, txt2, txt3, txt_emode1, txt_emode0, txt_patt,
-          txt_mode_val, txt_bpm, txt_bpm_val, txt_rcv, txt_rcv_val):
+for t in (txt1, txt2, txt3, txt_emode0, txt_emode1, txt_emode2,
+          txt_patt, txt_kit, txt_bpm, txt_bpm_val, txt_rcv, txt_rcv_val):
     dispgroup.append(t)
 # display setup end
+
 
 # sequence state
 step_millis = 0 # derived from bpm, changed by "update_bpm()" below
@@ -151,6 +143,13 @@ last_step_millis = ticks_ms()
 seq_pos = 0  # where in our sequence we are
 playing = False
 recording = False
+sequence = make_sequence( patterns[patt_index] )
+num_steps = len(sequence)  # number of steps
+
+# drumkit state
+kits = {}
+kit_index = 0
+waves = [None] * num_pads
 
 # UI state
 pads_lit = [0] * num_pads  # list of drum keys that are being played
@@ -160,12 +159,42 @@ last_led_millis = ticks_ms()  # last time we updated the LEDs
 rec_pressed = False  # is REC button held, for deleting tracks
 mute_pressed = False  # is MUTE button held, for muting/unmuting tracks
 encoder_val_last = encoder.position
-encoder_mode = 1  # 0 = change bpm, 1 = change pattern
+encoder_mode = 0  # 0 = change pattern, 1 = change kit, 2 = change bpm
+
+#
+# Drum kit management
+#
+
+# load up the drum kits' info into "kits" data struct
+# keys = kit names, values = list of WAV samples
+# also special key "kit_names" as order list of kit names
+def find_kits():
+    kit_root = '/drumkits'
+    # Kits should be named/laid out like:
+    # 00kick, 01snare, 02hatC, 03hatO, 04clap, 05tomL, 06ride, 07crash,
+    # if there aren't 8 smamples
+    kits = {}
+    for kitname in sorted(os.listdir(kit_root)):
+        kname = kitname.lower()
+        if not kname.startswith("kit"): # ignore non-kit dirs
+            continue
+        kits[kname] = []  # holds all sample names of given kit
+        for samplename in sorted(os.listdir(f"{kit_root}/{kname}")):
+            samplename = samplename.lower()
+            if samplename.endswith(".wav") and not samplename.startswith("."):
+                kits[kname].append(f"{kit_root}/{kname}/{samplename}") # add it to the bag!
+        if len(kits[kname]) < num_pads:
+            print(f"ERROR: kit '{kname}' not enough samples! Removing...")
+            del kits[kname]
+    kits['kit_names'] = sorted(kits.keys())  # add special key of sorted names
+    return kits
 
 # Load wave objects upfront in attempt to reduce play latency
-waves = [None] * num_pads
-for i in range(num_pads):
-    waves[i] = audiocore.WaveFile(open(wav_files[i][0],"rb"))  # ignore 'loopit'
+def load_drumkit():
+    kit_name = kits['kit_names'][kit_index]
+    for i in range(num_pads):
+        fname = kits[kit_name][i]
+        waves[i] = audiocore.WaveFile(open(fname,"rb"))  #
 
 # play a drum sample, either by sequencer or pressing pads
 def play_drum(num, pressed):
@@ -176,16 +205,9 @@ def play_drum(num, pressed):
     else: # released
         pass   # not doing this
 
-# Get midi from UART or USB
-def midi_receive():
-    while msg := midi_uart_in.receive() or midi_usb_in.receive():  # walrus!
-        if msg is not None:
-            print(time.monotonic(), msg)
-            if isinstance(msg, NoteOn) and msg.velocity:
-                print("noteOn:",msg.note, msg.note % 12)
-                play_drum( msg.note % 12, True)
-            if isinstance(msg,NoteOff) or (isinstance(msg, NoteOn) and msg.velocity==0):
-                play_drum( msg.note % 12, False)
+#
+# Display updates
+#
 
 # update step_millis and display
 def update_bpm():
@@ -208,10 +230,26 @@ def update_play():
 def update_pattern():
     txt_patt.text = patterns[patt_index]['name']
 
+def update_kit():
+    txt_kit.text = kits['kit_names'][kit_index]
+
 # update display
 def update_encmode():
     txt_emode0.text = '>' if encoder_mode==0 else ' '
     txt_emode1.text = '>' if encoder_mode==1 else ' '
+    txt_emode2.text = '>' if encoder_mode==2 else ' '
+
+
+# Get midi from UART or USB
+def midi_receive():
+    while msg := midi_uart_in.receive() or midi_usb_in.receive():  # walrus!
+        if msg is not None:
+            print(time.monotonic(), msg)
+            if isinstance(msg, NoteOn) and msg.velocity:
+                print("noteOn:",msg.note, msg.note % 12)
+                play_drum( msg.note % 12, True)
+            if isinstance(msg,NoteOff) or (isinstance(msg, NoteOn) and msg.velocity==0):
+                play_drum( msg.note % 12, False)
 
 # for debugging, print out current sequence when stopped
 def print_sequence():
@@ -224,10 +262,17 @@ def print_sequence():
     print("        ]");
     print("    }")
 
+#
 # startup
+#
+
+kits = find_kits()
+
+load_drumkit()
 update_bpm()
 update_play()
 update_pattern()
+update_kit()
 update_encmode()
 
 print("macropadsynthplug drum machine ready!  bpm:", bpm, "step_millis:", step_millis, "steps:", num_steps)
@@ -339,11 +384,15 @@ while True:
     if encoder_val != encoder_val_last:
         encoder_delta = (encoder_val - encoder_val_last)
         encoder_val_last = encoder_val
-        if encoder_mode == 0:  # mode 0 == update BPM
-            bpm += encoder_delta
-            update_bpm()
-        elif encoder_mode == 1:  # mode 1 == change pattern
+        if encoder_mode == 0:  # mode 1 == change pattern
             patt_index = (patt_index + encoder_delta) % len(patterns)
             print("pattern:", patt_index)
             sequence = make_sequence(patterns[patt_index])
             update_pattern()
+        elif encoder_mode == 1:  # mode 1 == change kit
+            kit_index = (kit_index+1) % len(kits['kit_names'])
+            load_drumkit()
+            update_kit()
+        elif encoder_mode == 2:  # mode 0 == update BPM
+            bpm += encoder_delta
+            update_bpm()
