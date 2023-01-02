@@ -26,7 +26,7 @@ Examples in this repo show how to do this in both CircuitPython and Arduino.
 ## How?
 
 The [Raspberry Pi RP2040 chip](https://www.raspberrypi.com/documentation/microcontrollers/rp2040.html)
-un the MacroPad RP2040 is amazingly configurable.
+on the MacroPad RP2040 is amazingly configurable.
 
 Normally a port like the StemmaQT I2C port would only be usable as an I2C bus, or maybe as GPIO pins.
 
@@ -63,5 +63,7 @@ and wanted the MacroPad RP2040 to join in the fun.
 ## Are these for sale?
 
 Not yet!  But perhaps soon!
+
+## Action shots
 
 <img width=700 src="./docs/img1.jpg"><img width=700 src="./docs/img2.jpg">
