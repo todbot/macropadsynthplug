@@ -121,13 +121,14 @@ txt3 = label.Label(font, text="drumachine",    x=0,  y=30)
 
 txt_mode_val = label.Label(font, text="stop",  x=40, y=45)
 
-txt_emode0 = label.Label(font,text=">",        x=0,  y=60)
-txt_patt = label.Label(font, text="patt",      x=8,  y=60)
-txt_emode1 = label.Label(font,text=" ",        x=0,  y=75)
-txt_kit = label.Label(font, text="kitt",       x=8,  y=75)
-txt_emode2 = label.Label(font,text=" ",        x=0,  y=90)
-txt_bpm = label.Label(font, text="bpm:",       x=8,  y=90)
-txt_bpm_val = label.Label(font, text=str(bpm), x=35, y=90)
+txt_emode0 = label.Label(font,text=">",        x=0,  y=55)
+txt_patt = label.Label(font, text="patt",      x=6,  y=55)
+txt_emode1 = label.Label(font,text=" ",        x=0,  y=70)
+txt_kit = label.Label(font, text="kit:",       x=6,  y=70)
+#txt_kit_val = label.Label(font, text="kitt",   x=6,  y=85)
+txt_emode2 = label.Label(font,text=" ",        x=0,  y=85)
+txt_bpm = label.Label(font, text="bpm:",       x=6,  y=85)
+txt_bpm_val = label.Label(font, text=str(bpm), x=35, y=85)
 
 txt_rcv = label.Label(font, text="midi:",      x=0, y=115)
 txt_rcv_val = label.Label(font, text="   ",    x=10, y=120)
@@ -376,7 +377,7 @@ while True:
     enc_sw = encoder_switch.events.get()
     if enc_sw:
         if enc_sw.pressed:
-            encoder_mode = (encoder_mode + 1) % 2  # only two modes for encoder currently
+            encoder_mode = (encoder_mode + 1) % 3  # only 3 modes for encoder currently
             update_encmode()
 
     # Encoder turn handling
