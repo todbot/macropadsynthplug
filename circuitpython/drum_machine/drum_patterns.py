@@ -1,23 +1,13 @@
 # drum_patterns.py --
-# tools and data for drums pattern
-#
-
-def copy_sequence_old(p):
-    s = []
-    for i in range(len(p)):
-        s.append( p[i].copy() )
-    return s
-
-def make_sequence(p):
-    s = []
-    for i in range(p['len']):
-        s.append( p['base'][ i % len(p['base']) ].copy() )
-    return s
+# data for drums pattern
+# part of MacroPadSynthPlug project: https://github.com/todbot/macropadsynthplug
+# 29 Dec 2022 - @todbot / Tod Kurt
 
 patterns = [
     {
         'name': 'patt0',
         'len': 64,
+        'seq': [],
         'base': [
             [0,0,1,0, 0,0,0,0],
             [0,0,0,0, 0,0,0,0],
@@ -39,11 +29,11 @@ patterns = [
             [0,0,0,0, 0,0,0,0],
             [0,0,0,0, 0,0,0,0],
         ],
-        'patt': [] # to be filled in
     },
     {
         'name': 'patt1',
         'len': 64,
+        'seq': [],
         'base': [
             [1,0,0,0, 0,0,0,0],
             [0,0,1,0, 0,0,0,0],
@@ -65,11 +55,11 @@ patterns = [
             [0,0,0,0, 0,0,0,0],
             [0,0,1,0, 0,0,0,0],
         ],
-        'patt': [] # IDEA: to be filled in
     },
     {
         'name': 'patt2',
         'len': 64,
+        'seq': [],
         'base': [
             [1,0,1,0, 0,0,0,0],
             [0,0,0,0, 0,0,0,0],
@@ -84,6 +74,7 @@ patterns = [
     {
         'name': 'patt3',
         'len': 64,
+        'seq': [],
         'base': [
             [1,0,0,0, 0,0,0,0],
             [0,0,1,0, 1,0,0,0],
@@ -126,6 +117,5 @@ patterns = [
             [0,0,1,0, 0,0,0,0],
 
         ],
-        'patt': [] # to be filled in
     },
 ]

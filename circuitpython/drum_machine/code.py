@@ -49,7 +49,7 @@ import adafruit_midi
 from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 
-from drum_patterns import *
+from drum_patterns import patterns
 
 #time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
 
@@ -137,31 +137,38 @@ for t in (txt1, txt2, txt3, txt_emode0, txt_emode1, txt_emode2,
     dispgroup.append(t)
 # display setup end
 
+#
+# Sequence management
+#
+def make_sequence_from_pattern_base(p):
+    s = []
+    for i in range(p['len']):
+        s.append( p['base'][ i % len(p['base']) ].copy() )
+    return s
 
-# sequence state
-step_millis = 0 # derived from bpm, changed by "update_bpm()" below
-last_step_millis = ticks_ms()
-seq_pos = 0  # where in our sequence we are
-playing = False
-recording = False
-sequence = make_sequence( patterns[patt_index] )
-num_steps = len(sequence)  # number of steps
+def load_patterns():
+    for p in patterns:
+        p['seq'] = make_sequence_from_pattern_base(p)
+    return patterns  # not strictly needed currently, but wait for it...
 
-# drumkit state
-kits = {}
-kit_index = 0
-waves = [None] * num_pads
+# for debugging, print out current sequence when stopped
+def print_sequence(pat):
+    seq = pat['seq']
+    name = pat['name']
+    print("  {")
+    print("    'name':'%s'," % pat['name'])
+    print("    'len': %d," % len(seq) )
+    print("    'seq': [")
+    for i in range(len(seq)):
+        print("       [" + ",".join('1' if e else '0' for e in seq[i]) + "],")
+    print("    ],");
+    print("  },")
 
-# UI state
-pads_lit = [0] * num_pads  # list of drum keys that are being played
-pads_mute = [0] * num_pads # which pads are muted
-pads_played = [0] * num_pads
-last_led_millis = ticks_ms()  # last time we updated the LEDs
-rec_pressed = False  # is REC button held, for deleting tracks
-mute_pressed = False  # is MUTE button held, for muting/unmuting tracks
-encoder_val_last = encoder.position
-encoder_mode = 0  # 0 = change pattern, 1 = change kit, 2 = change bpm
-
+def print_patterns():
+    print("[")
+    for p in patterns:
+        print_sequence(p)
+    print("]")
 #
 # Drum kit management
 #
@@ -252,23 +259,41 @@ def midi_receive():
             if isinstance(msg,NoteOff) or (isinstance(msg, NoteOn) and msg.velocity==0):
                 play_drum( msg.note % 12, False)
 
-# for debugging, print out current sequence when stopped
-def print_sequence():
-    print("    {")
-    print("        'name':'dump'")
-    print("        'len':", len(sequence))
-    print("        'base': [")
-    for i in range(len(sequence)):
-        print("            [" + ",".join('1' if e else '0' for e in sequence[i]) + "],")
-    print("        ]");
-    print("    }")
 
 #
 # startup
 #
 
+# load settings from disk
+patterns = load_patterns()
 kits = find_kits()
 
+# sequencer state
+step_millis = 0 # derived from bpm, changed by "update_bpm()" below
+last_step_millis = ticks_ms()
+seq_pos = 0  # where in our sequence we are
+playing = False
+recording = False
+sequence = patterns[patt_index]['seq']
+num_steps = len(sequence)  # number of steps
+
+# drumkit state
+kit_index = 0
+waves = [None] * num_pads
+
+# UI state
+pads_lit = [0] * num_pads  # list of drum keys that are being played
+pads_mute = [0] * num_pads # which pads are muted
+pads_played = [0] * num_pads
+last_led_millis = ticks_ms()  # last time we updated the LEDs
+rec_held = False  # is REC button held, for deleting tracks
+mute_held = False  # is MUTE button held, for muting/unmuting tracks
+tap_held = False  # is TAP/TEMPO button held
+encoder_val_last = encoder.position
+encoder_mode = 0  # 0 = change pattern, 1 = change kit, 2 = change bpm
+
+
+load_patterns()
 load_drumkit()
 update_bpm()
 update_play()
@@ -288,11 +313,13 @@ while True:
     if ticks_diff(now, last_led_millis) > 10:  # update every 10 msecs
         last_led_millis = now
         leds[key_PLAY]   = 0x00FF00 if playing else 0x114400
-        leds[key_RECORD] = 0xFF0000 if recording else 0x440044 if rec_pressed else 0x441100
+        leds[key_RECORD] = 0xFF0000 if recording else 0x440044 if rec_held else 0x441100
         leds[key_MUTE]   = 0x001144  # mute mode button
         for i in range(num_pads):  # light up pressed drumpads
-            if mute_pressed:  # show mute state instead
+            if mute_held:  # show mute state instead
                 leds[ keynum_to_padnum.index(i) ] = 0x000000 if pads_mute[i] else 0x001144
+            if tap_held and not playing:  # light up special mode if holding taptemp button
+                leds[ keynum_to_padnum.index(i) ] = 0x111111
             if pads_lit[i]:   # also show pads being triggered, in nice JP-approved rainbows
                 leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
         leds[:] = [[max(i-10,0) for i in l] for l in leds] # fade released drumpads slowly
@@ -312,7 +339,7 @@ while True:
                 if not pads_played[i]:
                     play_drum(i, sequence[seq_pos][i] )  # FIXME: what about note-off
                 pads_played[i] = 0
-        if(debug): print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
+            if(debug): print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
 
         # tempo indicator (leds.show() called by LED handler)
         if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
@@ -333,30 +360,30 @@ while True:
                     seq_pos = 0
                 else:  # we are stopped
                     recording = False # so turn off recording too
-                    if debug: print_sequence()  # "saving" it
+                    if debug: print_patterns()  # "saving" it
                 update_play()
 
         elif keynum == key_RECORD:
-            rec_pressed = key.pressed
-            if rec_pressed:
+            rec_held = key.pressed
+            if rec_held:
                 recording = not recording # toggle record state
                 update_play()
 
         elif keynum == key_MUTE:
-            mute_pressed = key.pressed
+            mute_held = key.pressed
 
         elif keynum == key_TAP_TEMPO:
-            pass
+            tap_held = key.pressed
 
         else: # else its a drumpad, either trigger, erase track, or mute track
             padnum = keynum_to_padnum[keynum]
             if key.pressed:
                 # if REC button held while pad press, erase track
-                if rec_pressed:
+                if rec_held:
                     for i in range(num_steps):
                         sequence[i][padnum] = 0
                 # if MUTE button held, mute/unmute track
-                elif mute_pressed:
+                elif mute_held:
                     pads_mute[padnum] = not pads_mute[padnum]
                 # else trigger drum
                 else:
@@ -388,7 +415,8 @@ while True:
         if encoder_mode == 0:  # mode 1 == change pattern
             patt_index = (patt_index + encoder_delta) % len(patterns)
             print("pattern:", patt_index)
-            sequence = make_sequence(patterns[patt_index])
+            #sequence = make_sequence(patterns[patt_index])
+            sequence = patterns[patt_index]['seq']
             update_pattern()
         elif encoder_mode == 1:  # mode 1 == change kit
             kit_index = (kit_index+1) % len(kits['kit_names'])
