@@ -17,11 +17,11 @@
 #  | ----- +------+------+------+------+
 #  | |   | |      |      |      |      |
 #  | |   | |  4   |  5   |  6   |  7   |
-#  | |   | |      |      |      |      |
+#  | |   | | clap | tom  | ride | cymb |
 #  | |   | +------+------+------+------+
 #  | |   | |      |      |      |      |
 #  | |   | |  0   |  1   |  2   |  3   |
-#  | ----- |      |      |      |      |
+#  | ----- | kick | snar | hatc | hato |
 #  |-------+------+------+------+------+
 #
 #
@@ -35,13 +35,12 @@
 
 print("macropadsynthplug drum machine start!")
 
-import time, os
-import supervisor
+import time, os, sys, json
 import board, busio, keypad, rotaryio, digitalio
 import displayio, terminalio
 import rainbowio
-import audiocore, audiomixer, audiopwmio
 import neopixel
+import audiocore, audiomixer, audiopwmio
 from adafruit_ticks import ticks_ms, ticks_diff, ticks_add
 from adafruit_display_text import bitmap_label as label
 import usb_midi
@@ -75,6 +74,8 @@ keynum_to_padnum = (0, 4, -1, # pad nums go from bottom row of four: 0,1,2,3
                     1, 5, -1, # then above that, next row of four 4,5,6,7
                     2, 6, -1, # and top row are invalid pad nums (buttons used for transport)
                     3, 7, -1)
+# maybe we invert this, since we call .index() more often
+
 #
 # Set up hardware
 #
@@ -152,23 +153,26 @@ def load_patterns():
     return patterns  # not strictly needed currently, but wait for it...
 
 # for debugging, print out current sequence when stopped
-def print_sequence(pat):
+def print_sequence(fp,pat):
     seq = pat['seq']
-    name = pat['name']
-    print("  {")
-    print("    'name':'%s'," % pat['name'])
-    print("    'len': %d," % len(seq) )
-    print("    'seq': [")
+    fp.write("  {\n")
+    fp.write("    'name':'%s',\n" % pat['name'])
+    fp.write("    'len': %d,\n" % len(seq) )
+    fp.write("    'seq': [\n")
     for i in range(len(seq)):
-        print("       [" + ",".join('1' if e else '0' for e in seq[i]) + "],")
-    print("    ],");
-    print("  },")
+        fp.write("       [" + ",".join('1' if e else '0' for e in seq[i]) + "],\n")
+    fp.write("    ],\n");
+    fp.write("  },\n")
 
 def print_patterns():
-    print("[")
-    for p in patterns:
-        print_sequence(p)
-    print("]")
+    return
+    with sys.stdout as fp:
+    #with open("/newpatterns.py", "w") as fp:
+        fp.write("[\n")
+        for p in patterns:
+            print_sequence(fp,p)
+        fp.write("]\n")
+
 #
 # Drum kit management
 #
@@ -247,6 +251,9 @@ def update_encmode():
     txt_emode1.text = '>' if encoder_mode==1 else ' '
     txt_emode2.text = '>' if encoder_mode==2 else ' '
 
+#
+# MIDI
+#
 
 # Get midi from UART or USB
 def midi_receive():
@@ -390,6 +397,9 @@ while True:
                     play_drum( padnum, 1 )
                     if recording:
                         pads_played[padnum] = 1
+                        diff = ticks_diff( ticks_ms(), last_step_millis )
+                        #print("diff:",diff, "diff-step_millis/2:", (step_millis//2)-diff )
+                        #if diff > steps_millis//2:
                         sequence[ seq_pos-1 ][padnum] = 1   # save it
                     # and start recording on the beat if set to record
                     if recording and not playing:
@@ -419,7 +429,7 @@ while True:
             sequence = patterns[patt_index]['seq']
             update_pattern()
         elif encoder_mode == 1:  # mode 1 == change kit
-            kit_index = (kit_index+1) % len(kits['kit_names'])
+            kit_index = (kit_index + encoder_delta) % len(kits['kit_names'])
             load_drumkit()
             update_kit()
         elif encoder_mode == 2:  # mode 0 == update BPM
