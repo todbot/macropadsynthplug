@@ -1,3 +1,8 @@
+#
+# NOTE: this is just demo code to test asyncio, it's not to be actually used
+#
+
+#
 # macropadsynthplug_drum_machine_async_code.py - drum machine on MacroPad RP2040
 #
 # 28 Dec 2022 - @todbot / Tod Kurt - https://github.com/todbot/macropadsynthplug
