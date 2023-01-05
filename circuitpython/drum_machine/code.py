@@ -133,7 +133,7 @@ txt_bpm_val = label.Label(font, text=str(bpm), x=35, y=85)
 
 txt_rcv = label.Label(font, text="midi:",      x=0, y=115)
 txt_rcv_val = label.Label(font, text="   ",    x=10, y=120)
-for t in (txt1, txt2, txt3, txt_emode0, txt_emode1, txt_emode2,
+for t in (txt1, txt2, txt3, txt_mode_val, txt_emode0, txt_emode1, txt_emode2,
           txt_patt, txt_kit, txt_bpm, txt_bpm_val, txt_rcv, txt_rcv_val):
     dispgroup.append(t)
 # display setup end
@@ -152,15 +152,44 @@ last_write_time = time.monotonic()
 def save_patterns():
     global last_write_time
     print("saving patterns...", end='')
-    if ticks_ms() - last_write_time < 10: # only allow writes every 10 seconds
-        print("NO WRITE: TOO SOON")
-        return
+    #if ticks_ms() - last_write_time < 10: # only allow writes every 10 seconds
+    #    print("NO WRITE: TOO SOON")
+    #    return
     last_write_time = time.monotonic()
-    with open('/saved_patterns.json', 'w') as fp:
-        json.dump(patterns, fp)
+    patts_to_sav = []
+    for i in range(len(patterns)):
+        patt = patterns[i]
+        seq = []
+        for j in range(len(patt['seq'])): # foreach pattern line
+            s = ''.join(str(e) for e in patt['seq'][j])
+            seq.append(s)
+        patt_sav = { 'name':patt['name'], 'seq':seq }
+        patts_to_sav.append(patt_sav)
+
+    with open('/test_saved_patterns.json', 'w') as fp:
+        json.dump(patts_to_sav, fp)
     print("done")
 
 def load_patterns():
+    patterrns = []
+    try:
+        with open("/test_saved_patterns.json",'r') as fp:
+            patterns = json.load(fp)
+            for p in patterns:
+                seq = p['seq']
+                for i in range(len(seq)):
+                    seq[i] = [int(e) for e in list(seq[i])]
+    except (OSError, ValueError) as error:  # maybe no file
+        print("ERROR: load_patterns:",error)
+    if len(patterns) == 0: # load demo
+        print("no saved patterns, loading demo patterns")
+        patterns = patterns_demo
+        for p in patterns:
+            p['seq'] = make_sequence_from_pattern_base(p)
+
+    return patterns  # not strictly needed currently, but wait for it...
+
+def load_patterns_orig():
     patterns = []
     try:
         with open("/saved_patterns.json",'r') as fp:
@@ -323,9 +352,8 @@ tap_held = False  # is TAP/TEMPO button held
 encoder_val_last = encoder.position
 encoder_mode = 0  # 0 = change pattern, 1 = change kit, 2 = change bpm
 
-
-load_patterns()
 load_drumkit()
+
 update_bpm()
 update_play()
 update_pattern()
@@ -353,7 +381,7 @@ while True:
                 leds[ keynum_to_padnum.index(i) ] = 0x111111
             if pads_lit[i]:   # also show pads being triggered, in nice JP-approved rainbows
                 leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
-        leds[:] = [[max(i-10,0) for i in l] for l in leds] # fade released drumpads slowly
+        leds[:] = [[max(i-10,05) for i in l] for l in leds] # fade released drumpads slowly
         leds.show()
 
     # Sequencer playing
@@ -392,15 +420,16 @@ while True:
                 else:  # we are stopped
                     recording = False # so turn off recording too
                     #if debug: print_patterns()  # "saving" it
-                    save_patterns()
+                    #save_patterns()  # NO takes way too long
                 update_play()
 
         elif keynum == key_RECORD:
             rec_held = key.pressed
-            if rec_held:
+            if key.pressed:
                 recording = not recording # toggle record state
                 update_play()
-
+            if key.released:
+                pass
         elif keynum == key_MUTE:
             mute_held = key.pressed
 
