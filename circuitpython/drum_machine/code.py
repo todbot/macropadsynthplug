@@ -397,10 +397,14 @@ while True:
                     play_drum( padnum, 1 )
                     if recording:
                         pads_played[padnum] = 1
+                        # fix up the quantization on record
                         diff = ticks_diff( ticks_ms(), last_step_millis )
-                        #print("diff:",diff, "diff-step_millis/2:", (step_millis//2)-diff )
-                        #if diff > steps_millis//2:
-                        sequence[ seq_pos-1 ][padnum] = 1   # save it
+                        if debug: print("*"*40, " diff:", diff)
+                        save_pos = (seq_pos//2)*2  # quantize, sigh
+                        # save_pos = seq_pos-1
+                        # if diff < step_millis//2:  #
+                        #     save_pos += 1
+                        sequence[ save_pos ][padnum] = 1   # save it
                     # and start recording on the beat if set to record
                     if recording and not playing:
                         playing = True
