@@ -48,7 +48,7 @@ import adafruit_midi
 from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 
-from drum_patterns import patterns
+from drum_patterns import patterns_demo
 
 #time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
 
@@ -147,9 +147,32 @@ def make_sequence_from_pattern_base(p):
         s.append( p['base'][ i % len(p['base']) ].copy() )
     return s
 
+
+last_write_time = time.monotonic()
+def save_patterns():
+    global last_write_time
+    print("saving patterns...", end='')
+    if ticks_ms() - last_write_time < 10: # only allow writes every 10 seconds
+        print("NO WRITE: TOO SOON")
+        return
+    last_write_time = time.monotonic()
+    with open('/saved_patterns.json', 'w') as fp:
+        json.dump(patterns, fp)
+    print("done")
+
 def load_patterns():
-    for p in patterns:
-        p['seq'] = make_sequence_from_pattern_base(p)
+    patterns = []
+    try:
+        with open("/saved_patterns.json",'r') as fp:
+            patterns = json.load(fp)
+    except (OSError, ValueError) as error:  # maybe no file
+        print("ERROR: load_patterns:",error)
+    if len(patterns) == 0: # load demo
+        print("no saved patterns, loading demo patterns")
+        patterns = patterns_demo
+        for p in patterns:
+            p['seq'] = make_sequence_from_pattern_base(p)
+
     return patterns  # not strictly needed currently, but wait for it...
 
 # for debugging, print out current sequence when stopped
@@ -216,6 +239,7 @@ def play_drum(num, pressed):
         voice.play(waves[num],loop=False)
     else: # released
         pass   # not doing this
+
 
 #
 # Display updates
@@ -367,7 +391,8 @@ while True:
                     seq_pos = 0
                 else:  # we are stopped
                     recording = False # so turn off recording too
-                    if debug: print_patterns()  # "saving" it
+                    #if debug: print_patterns()  # "saving" it
+                    save_patterns()
                 update_play()
 
         elif keynum == key_RECORD:

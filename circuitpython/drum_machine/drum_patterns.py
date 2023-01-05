@@ -3,7 +3,7 @@
 # part of MacroPadSynthPlug project: https://github.com/todbot/macropadsynthplug
 # 29 Dec 2022 - @todbot / Tod Kurt
 
-patterns = [
+patterns_demo = [
     {
         'name': 'patt0',
         'len': 64,
