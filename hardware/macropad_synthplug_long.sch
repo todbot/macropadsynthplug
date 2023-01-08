@@ -418,105 +418,6 @@ Righ-Angle SMT</description>
 </deviceset>
 </devicesets>
 </library>
-<library name="SJ-3523-SMT">
-<packages>
-<package name="CUI_SJ-3523-SMT">
-<wire x1="-3.5" y1="-3" x2="-3.5" y2="-2.5" width="0.127" layer="21"/>
-<wire x1="-3.5" y1="-2.5" x2="-3.5" y2="2.5" width="0.127" layer="21"/>
-<wire x1="-3.5" y1="2.5" x2="-3.5" y2="3" width="0.127" layer="21"/>
-<wire x1="-3.5" y1="-3" x2="-3.5" y2="3" width="0.127" layer="51"/>
-<wire x1="-3.5" y1="3" x2="11" y2="3" width="0.127" layer="51"/>
-<wire x1="11" y1="3" x2="11" y2="-3" width="0.127" layer="51"/>
-<wire x1="11" y1="-3" x2="-3.5" y2="-3" width="0.127" layer="51"/>
-<wire x1="-3.5" y1="3" x2="-0.4" y2="3" width="0.127" layer="21"/>
-<wire x1="2.2" y1="3" x2="11" y2="3" width="0.127" layer="21"/>
-<wire x1="11" y1="3" x2="11" y2="-3" width="0.127" layer="21"/>
-<wire x1="-3.5" y1="-3" x2="-2.4" y2="-3" width="0.127" layer="21"/>
-<wire x1="0.2" y1="-3" x2="6.7" y2="-3" width="0.127" layer="21"/>
-<wire x1="-3.75" y1="5.35" x2="11.25" y2="5.35" width="0.05" layer="39"/>
-<wire x1="11.25" y1="5.35" x2="11.25" y2="-5.35" width="0.05" layer="39"/>
-<wire x1="11.25" y1="-5.35" x2="-3.75" y2="-5.35" width="0.05" layer="39"/>
-<text x="-3.105690625" y="5.309740625" size="1.27233125" layer="25">&gt;NAME</text>
-<text x="-3.20573125" y="-6.61181875" size="1.27228125" layer="27">&gt;VALUE</text>
-<circle x="-4.3" y="-3.3" radius="0.1" width="0.2" layer="21"/>
-<circle x="-4.3" y="-3.3" radius="0.1" width="0.2" layer="51"/>
-<wire x1="9.9" y1="-3" x2="11" y2="-3" width="0.127" layer="21"/>
-<wire x1="-3.5" y1="2.5" x2="-6" y2="2.5" width="0.127" layer="21"/>
-<wire x1="-6" y1="2.5" x2="-6" y2="-2.5" width="0.127" layer="21"/>
-<wire x1="-6" y1="-2.5" x2="-3.5" y2="-2.5" width="0.127" layer="21"/>
-<wire x1="-3.5" y1="2.5" x2="-6" y2="2.5" width="0.127" layer="51"/>
-<wire x1="-6" y1="2.5" x2="-6" y2="-2.5" width="0.127" layer="51"/>
-<wire x1="-6" y1="-2.5" x2="-3.5" y2="-2.5" width="0.127" layer="51"/>
-<wire x1="-3.75" y1="5.35" x2="-3.75" y2="2.75" width="0.05" layer="39"/>
-<wire x1="-3.75" y1="2.75" x2="-6.25" y2="2.75" width="0.05" layer="39"/>
-<wire x1="-6.25" y1="2.75" x2="-6.25" y2="-2.75" width="0.05" layer="39"/>
-<wire x1="-6.25" y1="-2.75" x2="-3.75" y2="-2.75" width="0.05" layer="39"/>
-<wire x1="-3.75" y1="-2.75" x2="-3.75" y2="-5.35" width="0.05" layer="39"/>
-<hole x="0" y="0" drill="1.7"/>
-<smd name="3" x="0.9" y="3.7" dx="2.2" dy="2.8" layer="1"/>
-<smd name="1" x="-1.1" y="-3.7" dx="2.2" dy="2.8" layer="1"/>
-<smd name="2" x="8.3" y="-3.7" dx="2.8" dy="2.8" layer="1"/>
-<hole x="7" y="0" drill="1.7"/>
-</package>
-</packages>
-<symbols>
-<symbol name="SJ-3523-SMT">
-<wire x1="-3.429" y1="1.27" x2="-3.429" y2="-2.54" width="0.1524" layer="94"/>
-<wire x1="-3.429" y1="-2.54" x2="-2.159" y2="-2.54" width="0.1524" layer="94"/>
-<wire x1="-2.159" y1="-2.54" x2="-2.159" y2="1.27" width="0.1524" layer="94"/>
-<wire x1="-2.159" y1="1.27" x2="-2.794" y2="1.27" width="0.1524" layer="94"/>
-<wire x1="-2.794" y1="1.27" x2="-3.429" y2="1.27" width="0.1524" layer="94"/>
-<wire x1="-2.794" y1="1.27" x2="-2.794" y2="2.54" width="0.1524" layer="94"/>
-<wire x1="-2.794" y1="2.54" x2="5.08" y2="2.54" width="0.1524" layer="94"/>
-<wire x1="1.27" y1="0" x2="0.254" y2="-1.27" width="0.1524" layer="94"/>
-<wire x1="0.254" y1="-1.27" x2="-0.762" y2="0" width="0.1524" layer="94"/>
-<wire x1="-5.08" y1="5.08" x2="-5.08" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="-5.08" y1="-5.08" x2="5.08" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="5.08" y1="-5.08" x2="5.08" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="5.08" y1="-2.54" x2="5.08" y2="0" width="0.254" layer="94"/>
-<wire x1="5.08" y1="0" x2="5.08" y2="2.54" width="0.254" layer="94"/>
-<wire x1="5.08" y1="2.54" x2="5.08" y2="5.08" width="0.254" layer="94"/>
-<wire x1="5.08" y1="5.08" x2="-5.08" y2="5.08" width="0.254" layer="94"/>
-<text x="-5.100409375" y="5.737959375" size="2.201440625" layer="95">&gt;NAME</text>
-<text x="-5.10061875" y="-7.65093125" size="2.20203125" layer="96">&gt;VALUE</text>
-<wire x1="5.08" y1="0" x2="1.27" y2="0" width="0.1524" layer="94"/>
-<wire x1="5.08" y1="-2.54" x2="3.556" y2="-2.54" width="0.1524" layer="94"/>
-<wire x1="1.524" y1="-2.54" x2="2.54" y2="-1.27" width="0.1524" layer="94"/>
-<wire x1="2.54" y1="-1.27" x2="3.556" y2="-2.54" width="0.1524" layer="94"/>
-<pin name="1" x="7.62" y="2.54" visible="pad" length="short" direction="pas" rot="R180"/>
-<pin name="3" x="7.62" y="0" visible="pad" length="short" direction="pas" rot="R180"/>
-<pin name="2" x="7.62" y="-2.54" visible="pad" length="short" direction="pas" rot="R180"/>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="SJ-3523-SMT" prefix="J">
-<description>&lt;b&gt;Audio Jack Connector&lt;/b&gt; 3.5 mm Low Profile Surface Mount Stereo Jack, 3 Pin Right-Angle </description>
-<gates>
-<gate name="G$1" symbol="SJ-3523-SMT" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="CUI_SJ-3523-SMT">
-<connects>
-<connect gate="G$1" pin="1" pad="1"/>
-<connect gate="G$1" pin="2" pad="2"/>
-<connect gate="G$1" pin="3" pad="3"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="CUI_PURCHASE_URL" value="https://www.cuidevices.com/product/interconnect/connectors/audio-connectors/jacks/sj-352x-smt-series?utm_source=snapeda.com&amp;utm_medium=referral&amp;utm_campaign=snapedaBOM"/>
-<attribute name="DESCRIPTION" value="3.5 mm, Stereo, Right Angle, Surface Mount (SMT), 3 Conductors, 0~1 Internal Switches, Audio Jack Connector"/>
-<attribute name="DIGI-KEY_PART_NUMBER" value="CP-3523SJCT-ND"/>
-<attribute name="MF" value="CUI Devices"/>
-<attribute name="MP" value="SJ-3523-SMT-TR"/>
-<attribute name="PACKAGE" value="None"/>
-<attribute name="PURCHASE-URL" value="https://pricing.snapeda.com/search/part/SJ-3523-SMT-TR/?ref=eda"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="rcl" urn="urn:adsk.eagle:library:334">
 <description>&lt;b&gt;Resistors, Capacitors, Inductors&lt;/b&gt;&lt;p&gt;
 Based on the previous libraries:
@@ -11454,6 +11355,76 @@ DIN A4, landscape with location and doc. field</description>
 </deviceset>
 </devicesets>
 </library>
+<library name="audio_jacks_todbot">
+<packages>
+<package name="PJ-320D_SPARKFUN">
+<wire x1="0.5" y1="-3.3" x2="10.5" y2="-3.3" width="0.254" layer="21"/>
+<wire x1="12.2" y1="3.3" x2="12.2" y2="-3.3" width="0.254" layer="21"/>
+<wire x1="12.2" y1="3.3" x2="11" y2="3.3" width="0.254" layer="21"/>
+<wire x1="0.5" y1="3.3" x2="0" y2="3.3" width="0.254" layer="51"/>
+<wire x1="0" y1="3.3" x2="0" y2="2.8" width="0.254" layer="51"/>
+<wire x1="0" y1="2.8" x2="0" y2="-2.8" width="0.254" layer="51"/>
+<wire x1="0" y1="-2.8" x2="0" y2="-3.3" width="0.254" layer="51"/>
+<wire x1="0" y1="-3.3" x2="0.5" y2="-3.3" width="0.254" layer="51"/>
+<wire x1="0" y1="2.8" x2="-2.1" y2="2.8" width="0.254" layer="51"/>
+<wire x1="-2.1" y1="2.8" x2="-2.1" y2="-2.8" width="0.254" layer="51"/>
+<wire x1="-2.1" y1="-2.8" x2="0" y2="-2.8" width="0.254" layer="51"/>
+<wire x1="7" y1="3.3" x2="9.4" y2="3.3" width="0.254" layer="21"/>
+<wire x1="4" y1="3.3" x2="5.4" y2="3.3" width="0.254" layer="21"/>
+<wire x1="0.5" y1="3.3" x2="2.4" y2="3.3" width="0.254" layer="21"/>
+<smd name="EARTH" x="11.3" y="-3.25" dx="1.2" dy="2.5" layer="1"/>
+<smd name="RING1" x="6.2" y="3.25" dx="1.2" dy="2.5" layer="1"/>
+<smd name="RING2" x="3.2" y="3.25" dx="1.2" dy="2.5" layer="1" rot="R180"/>
+<smd name="TIP" x="10.2" y="3.25" dx="1.2" dy="2.5" layer="1"/>
+<hole x="1.6" y="0" drill="1.2"/>
+<hole x="8.6" y="0" drill="1.2"/>
+</package>
+</packages>
+<symbols>
+<symbol name="AUDIO-JACK-TRRS">
+<rectangle x1="-1.27" y1="-5.08" x2="0" y2="5.08" layer="94"/>
+<wire x1="1.27" y1="-5.08" x2="2.54" y2="-3.81" width="0.1524" layer="94"/>
+<wire x1="2.54" y1="-3.81" x2="3.81" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="3.81" y1="-5.08" x2="7.62" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="2.54" x2="5.08" y2="2.54" width="0.1524" layer="94"/>
+<wire x1="5.08" y1="2.54" x2="3.81" y2="1.27" width="0.1524" layer="94"/>
+<wire x1="3.81" y1="1.27" x2="2.54" y2="2.54" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="5.08" x2="0" y2="5.08" width="0.1524" layer="94"/>
+<wire x1="3.81" y1="-2.54" x2="5.08" y2="-1.27" width="0.1524" layer="94"/>
+<wire x1="5.08" y1="-1.27" x2="6.35" y2="-2.54" width="0.1524" layer="94"/>
+<wire x1="6.35" y1="-2.54" x2="7.62" y2="-2.54" width="0.1524" layer="94"/>
+<pin name="EARTH" x="10.16" y="5.08" visible="off" length="short" rot="R180"/>
+<pin name="RING1" x="10.16" y="2.54" visible="off" length="short" rot="R180"/>
+<pin name="RING2" x="10.16" y="-5.08" visible="off" length="short" rot="R180"/>
+<pin name="TIP" x="10.16" y="-2.54" visible="off" length="short" rot="R180"/>
+<text x="0" y="5.588" size="1.778" layer="95">&gt;NAME</text>
+<text x="0" y="-7.62" size="1.778" layer="96">&gt;VALUE</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="AUDIO-JACK-TRRS" prefix="J">
+<gates>
+<gate name="G$1" symbol="AUDIO-JACK-TRRS" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="PJ-320D_SPARKFUN">
+<connects>
+<connect gate="G$1" pin="EARTH" pad="EARTH"/>
+<connect gate="G$1" pin="RING1" pad="RING1"/>
+<connect gate="G$1" pin="RING2" pad="RING2"/>
+<connect gate="G$1" pin="TIP" pad="TIP"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="LCSC" value="C431535" constant="no"/>
+<attribute name="MPN" value="PJ-320D" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -11464,9 +11435,12 @@ DIN A4, landscape with location and doc. field</description>
 </class>
 </classes>
 <parts>
-<part name="CONN1" library="adafruit_electromech" deviceset="STEMMA_I2C" device="_QT" override_package3d_urn="urn:adsk.eagle:package:38451444/2" override_package_urn="urn:adsk.eagle:footprint:38451445/1"/>
+<part name="CONN1" library="adafruit_electromech" deviceset="STEMMA_I2C" device="_QT" override_package3d_urn="urn:adsk.eagle:package:38451444/2" override_package_urn="urn:adsk.eagle:footprint:38451445/1">
+<attribute name="LCSC2" value="C160404"/>
+<attribute name="MPN" value="HC-1.0-4PWT"/>
+<attribute name="MPN2" value="SM04B-SRSS-TB"/>
+</part>
 <part name="GND9" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="J2" library="SJ-3523-SMT" deviceset="SJ-3523-SMT" device="" override_package3d_urn="urn:adsk.eagle:package:36638079/2" override_package_urn="urn:adsk.eagle:footprint:36638080/1"/>
 <part name="R3" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="R0805" package3d_urn="urn:adsk.eagle:package:23553/2" value="1.8k"/>
 <part name="R2" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="R0805" package3d_urn="urn:adsk.eagle:package:23553/2" value="100"/>
 <part name="R1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="R0805" package3d_urn="urn:adsk.eagle:package:23553/2" value="220"/>
@@ -11475,41 +11449,54 @@ DIN A4, landscape with location and doc. field</description>
 <part name="C2" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C0805" package3d_urn="urn:adsk.eagle:package:23617/2" value="47uF"/>
 <part name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C0805" package3d_urn="urn:adsk.eagle:package:23617/2" value="100n"/>
 <part name="GND48" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="GND1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="J1" library="SJ-3523-SMT" deviceset="SJ-3523-SMT" device="" override_package3d_urn="urn:adsk.eagle:package:36638079/2" override_package_urn="urn:adsk.eagle:footprint:36638080/1"/>
-<part name="GND50" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R4" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="R0805" package3d_urn="urn:adsk.eagle:package:23553/2" value="220"/>
 <part name="GND51" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="+3V1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
 <part name="R5" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="R0805" package3d_urn="urn:adsk.eagle:package:23553/2" value="4.70k"/>
 <part name="C3" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C0805" package3d_urn="urn:adsk.eagle:package:23617/2" value="100n"/>
 <part name="GND52" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="IC1" library="optocoupler" deviceset="H11L*M" device="S" package3d_urn="urn:adsk.eagle:package:21970/1" override_package3d_urn="urn:adsk.eagle:package:38569067/2" override_package_urn="urn:adsk.eagle:footprint:21929/1" technology="1"/>
+<part name="IC1" library="optocoupler" deviceset="H11L*M" device="S" package3d_urn="urn:adsk.eagle:package:21970/1" override_package3d_urn="urn:adsk.eagle:package:38569067/2" override_package_urn="urn:adsk.eagle:footprint:21929/1" technology="1">
+<attribute name="LCSC" value="C78589"/>
+<attribute name="MPN2" value="H11L1S"/>
+</part>
 <part name="+3V2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
 <part name="D1" library="diode" library_urn="urn:adsk.eagle:library:210" deviceset="DIODE-" device="SOD123" package3d_urn="urn:adsk.eagle:package:43420/1" value="1N4148"/>
 <part name="FRAME2" library="frames" library_urn="urn:adsk.eagle:library:229" deviceset="A4L-LOC" device="" value="test"/>
+<part name="J2" library="audio_jacks_todbot" deviceset="AUDIO-JACK-TRRS" device="">
+<attribute name="LCSC" value="C431535"/>
+</part>
+<part name="GND2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="J3" library="audio_jacks_todbot" deviceset="AUDIO-JACK-TRRS" device=""/>
+<part name="GND1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
 <plain>
-<text x="-55.88" y="73.66" size="1.778" layer="97">On MacroPad RP2040, 
+<text x="-73.66" y="71.12" size="1.778" layer="97">On MacroPad RP2040, 
 StemmaQT pins are connected to:
 - SDA - GP20 - UART1 TX - PWM2B
 - SCL - GP21 - UART1 RX - PWM2A</text>
 <text x="-10.16" y="22.86" size="1.778" layer="97">From Figure 3.4.1 of "Hardware Design with RP2040" </text>
 <text x="71.12" y="-22.86" size="2.1844" layer="94" ratio="13">2022 @todbot / Tod Kurt</text>
+<text x="103.886" y="49.276" size="1.778" layer="97">RING2</text>
+<text x="103.886" y="43.18" size="1.778" layer="97">RING1</text>
+<text x="103.886" y="39.624" size="1.778" layer="97">GND</text>
+<text x="103.886" y="45.974" size="1.778" layer="97">TIP</text>
+<text x="-4.826" y="77.724" size="1.778" layer="97" rot="R180">RING2</text>
+<text x="-4.826" y="83.82" size="1.778" layer="97" rot="R180">RING1</text>
+<text x="-4.826" y="87.376" size="1.778" layer="97" rot="R180">GND</text>
+<text x="-4.826" y="81.026" size="1.778" layer="97" rot="R180">TIP</text>
 </plain>
 <instances>
-<instance part="CONN1" gate="G$1" x="-35.56" y="53.34" smashed="yes" rot="MR0">
-<attribute name="NAME" x="-29.21" y="61.595" size="1.778" layer="95" rot="MR0"/>
-<attribute name="VALUE" x="-31.75" y="45.72" size="1.778" layer="96" rot="MR0"/>
+<instance part="CONN1" gate="G$1" x="-43.18" y="53.34" smashed="yes" rot="MR0">
+<attribute name="NAME" x="-36.83" y="61.595" size="1.778" layer="95" rot="MR0"/>
+<attribute name="VALUE" x="-39.37" y="45.72" size="1.778" layer="96" rot="MR0"/>
+<attribute name="LCSC2" x="-43.18" y="53.34" size="1.778" layer="96" rot="MR0" display="off"/>
+<attribute name="MPN" x="-43.18" y="53.34" size="1.778" layer="96" rot="MR0" display="off"/>
+<attribute name="MPN2" x="-43.18" y="53.34" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
-<instance part="GND9" gate="1" x="-25.4" y="60.96" smashed="yes" rot="R180">
-<attribute name="VALUE" x="-22.86" y="63.5" size="1.778" layer="96" rot="R180"/>
-</instance>
-<instance part="J2" gate="G$1" x="81.28" y="43.18" smashed="yes" rot="R180">
-<attribute name="NAME" x="86.380409375" y="37.442040625" size="2.201440625" layer="95" rot="R180"/>
-<attribute name="VALUE" x="73.66" y="50.8" size="2.20203125" layer="96"/>
+<instance part="GND9" gate="1" x="-33.02" y="60.96" smashed="yes" rot="R180">
+<attribute name="VALUE" x="-30.48" y="63.5" size="1.778" layer="96" rot="R180"/>
 </instance>
 <instance part="R3" gate="G$1" x="53.34" y="38.1" smashed="yes" rot="MR270">
 <attribute name="NAME" x="55.118" y="40.4114" size="1.778" layer="95" rot="MR180"/>
@@ -11540,16 +11527,6 @@ StemmaQT pins are connected to:
 <instance part="GND48" gate="1" x="30.48" y="30.48" smashed="yes">
 <attribute name="VALUE" x="27.94" y="27.94" size="1.778" layer="96"/>
 </instance>
-<instance part="GND1" gate="1" x="73.66" y="38.1" smashed="yes">
-<attribute name="VALUE" x="71.12" y="35.56" size="1.778" layer="96"/>
-</instance>
-<instance part="J1" gate="G$1" x="7.62" y="83.82" smashed="yes">
-<attribute name="NAME" x="2.519590625" y="89.557959375" size="2.201440625" layer="95"/>
-<attribute name="VALUE" x="15.24" y="76.2" size="2.20203125" layer="96" rot="R180"/>
-</instance>
-<instance part="GND50" gate="1" x="17.78" y="86.36" smashed="yes" rot="R90">
-<attribute name="VALUE" x="20.32" y="83.82" size="1.778" layer="96" rot="R90"/>
-</instance>
 <instance part="R4" gate="G$1" x="27.94" y="83.82" smashed="yes" rot="MR0">
 <attribute name="NAME" x="27.178" y="87.1474" size="1.778" layer="95" rot="MR180"/>
 <attribute name="VALUE" x="26.162" y="82.296" size="1.778" layer="96" rot="MR180"/>
@@ -11574,9 +11551,11 @@ StemmaQT pins are connected to:
 <instance part="IC1" gate="G$1" x="48.26" y="81.28" smashed="yes">
 <attribute name="NAME" x="40.64" y="87.63" size="1.778" layer="95"/>
 <attribute name="VALUE" x="40.64" y="73.66" size="1.778" layer="96"/>
+<attribute name="LCSC" x="48.26" y="81.28" size="1.778" layer="96" display="off"/>
+<attribute name="MPN2" x="48.26" y="81.28" size="1.778" layer="96" display="off"/>
 </instance>
-<instance part="+3V2" gate="G$1" x="-50.8" y="58.42" smashed="yes" rot="MR0">
-<attribute name="VALUE" x="-49.784" y="58.42" size="1.778" layer="96" rot="MR90"/>
+<instance part="+3V2" gate="G$1" x="-58.42" y="58.42" smashed="yes" rot="MR0">
+<attribute name="VALUE" x="-57.404" y="58.42" size="1.778" layer="96" rot="MR90"/>
 </instance>
 <instance part="D1" gate="G$1" x="35.56" y="78.74" smashed="yes" rot="R90">
 <attribute name="NAME" x="32.0294" y="74.676" size="1.778" layer="95" rot="R90"/>
@@ -11587,6 +11566,21 @@ StemmaQT pins are connected to:
 <attribute name="LAST_DATE_TIME" x="123.19" y="-17.78" size="2.286" layer="94"/>
 <attribute name="SHEET" x="136.525" y="-22.86" size="2.54" layer="94"/>
 </instance>
+<instance part="J2" gate="G$1" x="99.06" y="45.72" smashed="yes" rot="R180">
+<attribute name="NAME" x="99.06" y="40.132" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="88.9" y="53.34" size="1.778" layer="96"/>
+<attribute name="LCSC" x="99.06" y="45.72" size="1.778" layer="96" rot="R180" display="off"/>
+</instance>
+<instance part="GND2" gate="1" x="88.9" y="38.1" smashed="yes">
+<attribute name="VALUE" x="86.36" y="35.56" size="1.778" layer="96"/>
+</instance>
+<instance part="J3" gate="G$1" x="0" y="81.28" smashed="yes">
+<attribute name="NAME" x="0" y="86.868" size="1.778" layer="95"/>
+<attribute name="VALUE" x="10.16" y="73.66" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="GND1" gate="1" x="10.16" y="88.9" smashed="yes" rot="R180">
+<attribute name="VALUE" x="12.7" y="91.44" size="1.778" layer="96" rot="R180"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -11594,10 +11588,10 @@ StemmaQT pins are connected to:
 <net name="GND" class="0">
 <segment>
 <pinref part="CONN1" gate="G$1" pin="GND"/>
-<wire x1="-35.56" y1="58.42" x2="-25.4" y2="58.42" width="0.1524" layer="91"/>
+<wire x1="-43.18" y1="58.42" x2="-33.02" y2="58.42" width="0.1524" layer="91"/>
 <pinref part="GND9" gate="1" pin="GND"/>
-<wire x1="-17.78" y1="58.42" x2="-25.4" y2="58.42" width="0.1524" layer="91"/>
-<junction x="-25.4" y="58.42"/>
+<wire x1="-25.4" y1="58.42" x2="-33.02" y2="58.42" width="0.1524" layer="91"/>
+<junction x="-33.02" y="58.42"/>
 </segment>
 <segment>
 <pinref part="R3" gate="G$1" pin="2"/>
@@ -11612,14 +11606,6 @@ StemmaQT pins are connected to:
 <pinref part="GND48" gate="1" pin="GND"/>
 </segment>
 <segment>
-<pinref part="J2" gate="G$1" pin="1"/>
-<pinref part="GND1" gate="1" pin="GND"/>
-</segment>
-<segment>
-<pinref part="J1" gate="G$1" pin="1"/>
-<pinref part="GND50" gate="1" pin="GND"/>
-</segment>
-<segment>
 <pinref part="GND51" gate="1" pin="GND"/>
 <pinref part="IC1" gate="G$1" pin="GND"/>
 <wire x1="58.42" y1="78.74" x2="60.96" y2="78.74" width="0.1524" layer="91"/>
@@ -11629,20 +11615,33 @@ StemmaQT pins are connected to:
 <pinref part="C3" gate="G$1" pin="2"/>
 <pinref part="GND52" gate="1" pin="GND"/>
 </segment>
-</net>
-<net name="N$47" class="0">
 <segment>
-<wire x1="73.66" y1="43.18" x2="71.12" y2="43.18" width="0.1524" layer="91"/>
+<pinref part="J2" gate="G$1" pin="EARTH"/>
+<pinref part="GND2" gate="1" pin="GND"/>
+</segment>
+<segment>
+<pinref part="J3" gate="G$1" pin="EARTH"/>
+<pinref part="GND1" gate="1" pin="GND"/>
+</segment>
+</net>
+<net name="AUDIO_OUT" class="0">
+<segment>
 <pinref part="R3" gate="G$1" pin="1"/>
 <pinref part="C2" gate="G$1" pin="2"/>
-<wire x1="71.12" y1="43.18" x2="53.34" y2="43.18" width="0.1524" layer="91"/>
+<wire x1="73.66" y1="43.18" x2="53.34" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="50.8" y1="43.18" x2="53.34" y2="43.18" width="0.1524" layer="91"/>
 <junction x="53.34" y="43.18"/>
-<pinref part="J2" gate="G$1" pin="3"/>
-<pinref part="J2" gate="G$1" pin="2"/>
-<wire x1="73.66" y1="45.72" x2="71.12" y2="45.72" width="0.1524" layer="91"/>
-<wire x1="71.12" y1="45.72" x2="71.12" y2="43.18" width="0.1524" layer="91"/>
-<junction x="71.12" y="43.18"/>
+<label x="55.88" y="43.18" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="J2" gate="G$1" pin="RING1"/>
+<wire x1="88.9" y1="43.18" x2="83.82" y2="43.18" width="0.1524" layer="91"/>
+<pinref part="J2" gate="G$1" pin="RING2"/>
+<wire x1="88.9" y1="50.8" x2="83.82" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="83.82" y1="43.18" x2="83.82" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="83.82" y1="43.18" x2="76.2" y2="43.18" width="0.1524" layer="91"/>
+<junction x="83.82" y="43.18"/>
+<label x="76.2" y="43.18" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="N$48" class="0">
@@ -11667,15 +11666,15 @@ StemmaQT pins are connected to:
 </segment>
 <segment>
 <pinref part="CONN1" gate="G$1" pin="SDA"/>
-<label x="-27.94" y="53.34" size="1.778" layer="95"/>
-<wire x1="-17.78" y1="53.34" x2="-35.56" y2="53.34" width="0.1524" layer="91"/>
+<label x="-35.56" y="53.34" size="1.778" layer="95"/>
+<wire x1="-25.4" y1="53.34" x2="-43.18" y2="53.34" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="MIDI_IN" class="0">
 <segment>
 <pinref part="CONN1" gate="G$1" pin="SCL"/>
-<label x="-27.94" y="50.8" size="1.778" layer="95"/>
-<wire x1="-17.78" y1="50.8" x2="-35.56" y2="50.8" width="0.1524" layer="91"/>
+<label x="-35.56" y="50.8" size="1.778" layer="95"/>
+<wire x1="-25.4" y1="50.8" x2="-43.18" y2="50.8" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <wire x1="58.42" y1="81.28" x2="66.04" y2="81.28" width="0.1524" layer="91"/>
@@ -11705,9 +11704,9 @@ StemmaQT pins are connected to:
 <segment>
 <pinref part="CONN1" gate="G$1" pin="V+"/>
 <pinref part="+3V2" gate="G$1" pin="+3V3"/>
-<wire x1="-35.56" y1="55.88" x2="-50.8" y2="55.88" width="0.1524" layer="91"/>
-<wire x1="-17.78" y1="55.88" x2="-35.56" y2="55.88" width="0.1524" layer="91"/>
-<junction x="-35.56" y="55.88"/>
+<wire x1="-43.18" y1="55.88" x2="-58.42" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="-25.4" y1="55.88" x2="-43.18" y2="55.88" width="0.1524" layer="91"/>
+<junction x="-43.18" y="55.88"/>
 </segment>
 </net>
 <net name="N$13" class="0">
@@ -11723,9 +11722,6 @@ StemmaQT pins are connected to:
 </net>
 <net name="N$14" class="0">
 <segment>
-<wire x1="22.86" y1="81.28" x2="22.86" y2="73.66" width="0.1524" layer="91"/>
-<pinref part="J1" gate="G$1" pin="2"/>
-<wire x1="22.86" y1="81.28" x2="15.24" y2="81.28" width="0.1524" layer="91"/>
 <wire x1="38.1" y1="73.66" x2="35.56" y2="73.66" width="0.1524" layer="91"/>
 <wire x1="35.56" y1="73.66" x2="22.86" y2="73.66" width="0.1524" layer="91"/>
 <wire x1="35.56" y1="76.2" x2="35.56" y2="73.66" width="0.1524" layer="91"/>
@@ -11733,13 +11729,16 @@ StemmaQT pins are connected to:
 <pinref part="IC1" gate="G$1" pin="C"/>
 <wire x1="38.1" y1="78.74" x2="38.1" y2="73.66" width="0.1524" layer="91"/>
 <pinref part="D1" gate="G$1" pin="A"/>
+<pinref part="J3" gate="G$1" pin="TIP"/>
+<wire x1="10.16" y1="78.74" x2="22.86" y2="78.74" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="78.74" x2="22.86" y2="73.66" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$15" class="0">
+<net name="N$2" class="0">
 <segment>
 <pinref part="R4" gate="G$1" pin="2"/>
-<pinref part="J1" gate="G$1" pin="3"/>
-<wire x1="22.86" y1="83.82" x2="15.24" y2="83.82" width="0.1524" layer="91"/>
+<pinref part="J3" gate="G$1" pin="RING1"/>
+<wire x1="22.86" y1="83.82" x2="10.16" y2="83.82" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
