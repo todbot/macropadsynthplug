@@ -12,11 +12,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <Fonts/FreeMono9pt7b.h>
-#include <Fonts/FreeMono12pt7b.h>
-#include <Fonts/FreeMono18pt7b.h>
-#include <Fonts/FreeMonoBold12pt7b.h>
 #include "Font5x7FixedMono.h"
-
 
 #define myfont FreeMono9pt7b
 #define myfont2 Font5x7FixedMono 
