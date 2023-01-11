@@ -42,7 +42,7 @@ import rainbowio
 import neopixel
 import audiocore, audiomixer, audiopwmio
 from adafruit_ticks import ticks_ms, ticks_diff, ticks_add
-from adafruit_display_text import bitmap_label as label
+from adafruit_display_text.bitmap_label import Label
 import usb_midi
 import adafruit_midi
 from adafruit_midi.note_on import NoteOn
@@ -116,23 +116,23 @@ display.rotation = 90
 font = terminalio.FONT
 dispgroup = displayio.Group()
 display.show(dispgroup)
-txt1 = label.Label(font, text="macropad",      x=0,  y=10)
-txt2 = label.Label(font, text="synthplug",     x=0,  y=20)
-txt3 = label.Label(font, text="drumachine",    x=0,  y=30)
+txt1 = Label(font, text="macropad",      x=0,  y=10)
+txt2 = Label(font, text="synthplug",     x=0,  y=20)
+txt3 = Label(font, text="drumachine",    x=0,  y=30)
 
-txt_mode_val = label.Label(font, text="stop",  x=40, y=45)
+txt_mode_val = Label(font, text="stop",  x=40, y=45)
 
-txt_emode0 = label.Label(font,text=">",        x=0,  y=55)
-txt_patt = label.Label(font, text="patt",      x=6,  y=55)
-txt_emode1 = label.Label(font,text=" ",        x=0,  y=70)
-txt_kit = label.Label(font, text="kit:",       x=6,  y=70)
-#txt_kit_val = label.Label(font, text="kitt",   x=6,  y=85)
-txt_emode2 = label.Label(font,text=" ",        x=0,  y=85)
-txt_bpm = label.Label(font, text="bpm:",       x=6,  y=85)
-txt_bpm_val = label.Label(font, text=str(bpm), x=35, y=85)
+txt_emode0 = Label(font,text=">",        x=0,  y=55)
+txt_patt = Label(font, text="patt",      x=6,  y=55)
+txt_emode1 = Label(font,text=" ",        x=0,  y=70)
+txt_kit = Label(font, text="kit:",       x=6,  y=70)
+#txt_kit_val = Label(font, text="kitt",   x=6,  y=85)
+txt_emode2 = Label(font,text=" ",        x=0,  y=85)
+txt_bpm = Label(font, text="bpm:",       x=6,  y=85)
+txt_bpm_val = Label(font, text=str(bpm), x=35, y=85)
 
-txt_rcv = label.Label(font, text="midi:",      x=0, y=115)
-txt_info = label.Label(font, text="   ",    x=10, y=122)
+txt_rcv = Label(font, text="midi:",      x=0, y=115)
+txt_info = Label(font, text="   ",    x=10, y=122)
 for t in (txt1, txt2, txt3, txt_mode_val, txt_emode0, txt_emode1, txt_emode2,
           txt_patt, txt_kit, txt_bpm, txt_bpm_val, txt_rcv, txt_info):
     dispgroup.append(t)
@@ -146,21 +146,22 @@ def make_sequence_from_demo_pattern(p):
     sq = []
     for i in range(p['len']):  # FIXME: maybe 'base_len'? no but
         stepline_str = p['base'][i % len(p['base'])] # get step line in base seq, maybe repeating
+        # convert str of '1010' to array 1,0,1,0, eliding whitespace, for all seq lines
         stepline_str = stepline_str.replace(' ', '')  # collapse any whitespace
-        sq.append( int(stepline_str,2) ) # convert to number from binary string
+        stepline = [int(c) for c in stepline_str]
+        sq.append( stepline ) # convert binary string to array of 1,0
     return sq
 
 last_write_time = time.monotonic()
 def save_patterns():
     global last_write_time
     print("saving patterns...", end='')
-    #if ticks_ms() - last_write_time < 10: # only allow writes every 10 seconds
+    #if ticks_ms() - last_write_time < 10: # only allow writes every 10 seconds, to save flash
     #    print("NO WRITE: TOO SOON")
     #    return
     last_write_time = time.monotonic()
     patts_to_sav = []
     for i in range(len(patterns)):
-        seq_str = [f"{l:08b}" for l in patterns[i]['seq']]
         patts_to_sav.append( { 'name':patterns[i]['name'], 'seq':seq_str } )
     with open('/test_saved_patterns.json', 'w') as fp:
         json.dump(patts_to_sav, fp)
@@ -172,8 +173,8 @@ def load_patterns():
         with open("/saved_patterns.json",'r') as fp:
             patts = json.load(fp)
             for p in patts:
-                # convert to number from binary string (w/ opt whitespace)
-                p['seq'] = [int(s.replace(' ',''),2) for s in p['seq']]
+                # convert str of '1010' to array 1,0,1,0, eliding whitespace, for all seq lines
+                p['seq'] = [int(c) for c in s.replace(' ','') for s in p['seq']]
     except (OSError, ValueError) as error:  # maybe no file
         print("ERROR: load_patterns:",error)
     if len(patts) == 0: # load demo
@@ -316,7 +317,8 @@ last_step_millis = ticks_ms()
 seq_pos = 0  # where in our sequence we are
 playing = False
 recording = False
-sequence = patterns[patt_index]['seq']
+
+sequence = patterns[patt_index]['seq']  # sequence is array of [1,0,1,0]
 num_steps = len(sequence)  # number of steps
 
 # drumkit state
@@ -383,11 +385,10 @@ while True:
         # play any sounds recorded for this step
         if playing:
             for i in range(num_pads):
-                if not pads_played[i]:
-                    note_bit = 1<<(num_pads-1-i)
-                    play_drum(i, sequence[seq_pos] & note_bit ) # FIXME: what about note-off
+                if not pads_played[i]: # but play only if we didn't just play it
+                    play_drum(i, sequence[seq_pos][i] ) # FIXME: what about note-off
                 pads_played[i] = 0
-            if(debug): print(f"{late_millis:02d} {seq_pos:3d} {sequence[seq_pos]:08b}")
+            if(debug): print(f"{late_millis:02d} {seq_pos:3d} {sequence[seq_pos]}")
 
         # tempo indicator (leds.show() called by LED handler)
         if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
@@ -435,8 +436,7 @@ while True:
                 if rec_held:
                     rec_held_used = True
                     for i in range(num_steps):
-                        sequence[i] &= ~(1<<(num_pads-1-padnum)) # clear trigs for given pad
-                    #    sequence[i][padnum] = 0
+                        sequence[i][padnum] = 0
                 # if MUTE button held, mute/unmute track
                 elif mute_held:
                     pads_mute[padnum] = not pads_mute[padnum]
@@ -451,9 +451,7 @@ while True:
                         save_pos = seq_pos -1
                         if diff > step_millis//2:  #
                             save_pos += 1
-                        note_bit = 1<<(num_pads-1-padnum)
-                        sequence[ save_pos ] |= note_bit  # save it
-                        #sequence[ save_pos ][padnum] = 1   # save it
+                        sequence[ save_pos ][padnum] = 1   # save it
                     # and start recording on the beat if set to record
                     if recording and not playing:
                         playing = True
