@@ -1,5 +1,3 @@
-
-
 # macropadsynthplug_drum_machine_code.py - drum machine on MacroPad RP2040
 #
 # 28 Dec 2022 - @todbot / Tod Kurt - https://github.com/todbot/macropadsynthplug
@@ -60,7 +58,7 @@ debug = True
 patt_index = 0  # which sequence we're playing from our list of avail patterns
 bpm = 120  # default BPM
 steps_per_beat = 4  # divisions per beat: 8 = 32nd notes, 4 = 16th notes
-num_pads = 8
+num_pads = 8  # we use 8 of the 12 macropad keys as drum triggers
 
 #
 # MacroPad key layout
@@ -107,7 +105,7 @@ else:
     speaker_en = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
     speaker_en.switch_to_output(value=True)
 mixer = audiomixer.Mixer(voice_count=num_pads, sample_rate=22050, channel_count=1,
-                         bits_per_sample=16, samples_signed=True, buffer_size=2048)
+                         bits_per_sample=16, samples_signed=True, buffer_size=4096)
 audio.play(mixer) # attach mixer to audio playback
 
 
@@ -134,9 +132,9 @@ txt_bpm = label.Label(font, text="bpm:",       x=6,  y=85)
 txt_bpm_val = label.Label(font, text=str(bpm), x=35, y=85)
 
 txt_rcv = label.Label(font, text="midi:",      x=0, y=115)
-txt_rcv_val = label.Label(font, text="   ",    x=10, y=120)
+txt_info = label.Label(font, text="   ",    x=10, y=122)
 for t in (txt1, txt2, txt3, txt_mode_val, txt_emode0, txt_emode1, txt_emode2,
-          txt_patt, txt_kit, txt_bpm, txt_bpm_val, txt_rcv, txt_rcv_val):
+          txt_patt, txt_kit, txt_bpm, txt_bpm_val, txt_rcv, txt_info):
     dispgroup.append(t)
 # display setup end
 
@@ -331,8 +329,10 @@ pads_mute = [0] * num_pads # which pads are muted
 pads_played = [0] * num_pads
 last_led_millis = ticks_ms()  # last time we updated the LEDs
 rec_held = False  # is REC button held, for deleting tracks
+rec_held_used = False
 mute_held = False  # is MUTE button held, for muting/unmuting tracks
 tap_held = False  # is TAP/TEMPO button held
+enc_sw_press_millis = 0
 encoder_val_last = encoder.position
 encoder_mode = 0  # 0 = change pattern, 1 = change kit, 2 = change bpm
 
@@ -358,25 +358,27 @@ while True:
     if ticks_diff(now, last_led_millis) > 10:  # update every 10 msecs
         last_led_millis = now
         leds[key_PLAY]   = 0x00FF00 if playing else 0x114400
-        leds[key_RECORD] = 0xFF0000 if recording else 0x440044 if rec_held else 0x441100
+        #leds[key_RECORD] = 0xFF0000 if recording else 0x440044 if rec_held else 0x441100
+        leds[key_RECORD] = 0xFF0044 if rec_held else 0xFF0000 if recording else 0x440011
         leds[key_MUTE]   = 0x001144  # mute mode button
         for i in range(num_pads):  # light up pressed drumpads
             if mute_held:  # show mute state instead
                 leds[ keynum_to_padnum.index(i) ] = 0x000000 if pads_mute[i] else 0x001144
-            if tap_held and not playing:  # light up special mode if holding taptemp button
+            elif rec_held:
+                leds[ keynum_to_padnum.index(i) ] = 0xAA0022
+            elif tap_held and not playing:  # light up special mode if holding taptemp button
                 leds[ keynum_to_padnum.index(i) ] = 0x111111
             if pads_lit[i]:   # also show pads being triggered, in nice JP-approved rainbows
                 leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
+
         leds[:] = [[max(i-led_fade,led_min) for i in l] for l in leds] # fade released drumpads slowly
         leds.show()
 
     # Sequencer playing
-    fudge = 2 # sigh
     diff = ticks_diff( now, last_step_millis )
     if diff >= step_millis:
         late_millis = ticks_diff( diff, step_millis )  # how much are we late
         last_step_millis = ticks_add( now, -(late_millis//2) ) # attempt to make it up on next step
-        #last_step_millis = ticks_add( ticks_diff, -fudge )
 
         # play any sounds recorded for this step
         if playing:
@@ -384,7 +386,6 @@ while True:
                 if not pads_played[i]:
                     note_bit = 1<<(num_pads-1-i)
                     play_drum(i, sequence[seq_pos] & note_bit ) # FIXME: what about note-off
-                    #play_drum(i, sequence[seq_pos][i] )  # FIXME: what about note-off
                 pads_played[i] = 0
             if(debug): print(f"{late_millis:02d} {seq_pos:3d} {sequence[seq_pos]:08b}")
 
@@ -407,17 +408,20 @@ while True:
                     seq_pos = 0
                 else:  # we are stopped
                     recording = False # so turn off recording too
-                    #if debug: print_patterns()  # "saving" it
-                    #save_patterns()  # NO takes way too long
+                    for i in range(num_pads):
+                        play_drum(i,0)
                 update_play()
 
         elif keynum == key_RECORD:
-            rec_held = key.pressed
             if key.pressed:
-                recording = not recording # toggle record state
-                update_play()
+                rec_held = True
+                rec_held_used = False
             if key.released:
-                pass
+                rec_held = False
+                if not rec_held_used:
+                    recording = not recording # toggle record state
+                    update_play()
+
         elif keynum == key_MUTE:
             mute_held = key.pressed
 
@@ -429,8 +433,9 @@ while True:
             if key.pressed:
                 # if REC button held while pad press, erase track
                 if rec_held:
+                    rec_held_used = True
                     for i in range(num_steps):
-                        sequence[i] &= ~(1<<(num_pads-1-padnum)) # clear trigs
+                        sequence[i] &= ~(1<<(num_pads-1-padnum)) # clear trigs for given pad
                     #    sequence[i][padnum] = 0
                 # if MUTE button held, mute/unmute track
                 elif mute_held:
@@ -442,8 +447,7 @@ while True:
                         pads_played[padnum] = 1
                         # fix up the quantization on record
                         diff = ticks_diff( ticks_ms(), last_step_millis )
-                        if debug: print("*"*40, " diff:", diff)
-                        #save_pos = (seq_pos//2)*2  # quantize, sigh
+                        if debug: print("*"*30, " diff:", diff)
                         save_pos = seq_pos -1
                         if diff > step_millis//2:  #
                             save_pos += 1
@@ -463,8 +467,18 @@ while True:
     enc_sw = encoder_switch.events.get()
     if enc_sw:
         if enc_sw.pressed:
-            encoder_mode = (encoder_mode + 1) % 3  # only 3 modes for encoder currently
-            update_encmode()
+            enc_sw_press_millis = now
+        if enc_sw.released:
+            if (now - enc_sw_press_millis) < 2000:  # press & release not press-hold
+                encoder_mode = (encoder_mode + 1) % 3  # only 3 modes for encoder currently
+                update_encmode()
+            else:
+                txt_info.text = ''
+            enc_sw_press_millis = 0
+
+    if enc_sw_press_millis and (now - enc_sw_press_millis) > 2000: # press-hold == save patterns
+        txt_info.text = "saving"
+        save_patterns()
 
     # Encoder turn handling
     encoder_val = encoder.position
