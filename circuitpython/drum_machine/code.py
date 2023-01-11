@@ -1,3 +1,5 @@
+
+
 # macropadsynthplug_drum_machine_code.py - drum machine on MacroPad RP2040
 #
 # 28 Dec 2022 - @todbot / Tod Kurt - https://github.com/todbot/macropadsynthplug
@@ -52,12 +54,12 @@ from drum_patterns import patterns_demo
 
 #time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
 
-use_macrosynthplug = True
+use_macrosynthplug = False  # False to use built-in speaker of MacroPad RP2040
 debug = True
 
 patt_index = 0  # which sequence we're playing from our list of avail patterns
 bpm = 120  # default BPM
-steps_per_beat = 8  # divisions per beat: 8 = 32nd notes, 4 = 16th notes
+steps_per_beat = 4  # divisions per beat: 8 = 32nd notes, 4 = 16th notes
 num_pads = 8
 
 #
@@ -86,7 +88,7 @@ midi_uart = busio.UART(rx=board.SCL, tx=None, baudrate=31250, timeout=0.001)
 midi_uart_in = adafruit_midi.MIDI( midi_in=midi_uart) # , debug=False)
 midi_usb_in = adafruit_midi.MIDI( midi_in=usb_midi.ports[0])
 
-leds = neopixel.NeoPixel(board.NEOPIXEL, 12, brightness=0.3, auto_write=False)
+leds = neopixel.NeoPixel(board.NEOPIXEL, 12, brightness=0.2, auto_write=False)
 leds.fill(0xff00ff); leds.show()
 
 key_pins = (board.KEY1, board.KEY2, board.KEY3,
@@ -141,12 +143,14 @@ for t in (txt1, txt2, txt3, txt_mode_val, txt_emode0, txt_emode1, txt_emode2,
 #
 # Sequence management
 #
-def make_sequence_from_pattern_base(p):
-    s = []
-    for i in range(p['len']):
-        s.append( p['base'][ i % len(p['base']) ].copy() )
-    return s
 
+def make_sequence_from_demo_pattern(p):
+    sq = []
+    for i in range(p['len']):  # FIXME: maybe 'base_len'? no but
+        stepline_str = p['base'][i % len(p['base'])] # get step line in base seq, maybe repeating
+        stepline_str = stepline_str.replace(' ', '')  # collapse any whitespace
+        sq.append( int(stepline_str,2) ) # convert to number from binary string
+    return sq
 
 last_write_time = time.monotonic()
 def save_patterns():
@@ -158,51 +162,29 @@ def save_patterns():
     last_write_time = time.monotonic()
     patts_to_sav = []
     for i in range(len(patterns)):
-        patt = patterns[i]
-        seq = []
-        for j in range(len(patt['seq'])): # foreach pattern line
-            s = ''.join(str(e) for e in patt['seq'][j])
-            seq.append(s)
-        patt_sav = { 'name':patt['name'], 'seq':seq }
-        patts_to_sav.append(patt_sav)
-
+        seq_str = [f"{l:08b}" for l in patterns[i]['seq']]
+        patts_to_sav.append( { 'name':patterns[i]['name'], 'seq':seq_str } )
     with open('/test_saved_patterns.json', 'w') as fp:
         json.dump(patts_to_sav, fp)
     print("done")
 
 def load_patterns():
-    patterrns = []
-    try:
-        with open("/test_saved_patterns.json",'r') as fp:
-            patterns = json.load(fp)
-            for p in patterns:
-                seq = p['seq']
-                for i in range(len(seq)):
-                    seq[i] = [int(e) for e in list(seq[i])]
-    except (OSError, ValueError) as error:  # maybe no file
-        print("ERROR: load_patterns:",error)
-    if len(patterns) == 0: # load demo
-        print("no saved patterns, loading demo patterns")
-        patterns = patterns_demo
-        for p in patterns:
-            p['seq'] = make_sequence_from_pattern_base(p)
-
-    return patterns  # not strictly needed currently, but wait for it...
-
-def load_patterns_orig():
-    patterns = []
+    patts = []
     try:
         with open("/saved_patterns.json",'r') as fp:
-            patterns = json.load(fp)
+            patts = json.load(fp)
+            for p in patts:
+                # convert to number from binary string (w/ opt whitespace)
+                p['seq'] = [int(s.replace(' ',''),2) for s in p['seq']]
     except (OSError, ValueError) as error:  # maybe no file
         print("ERROR: load_patterns:",error)
-    if len(patterns) == 0: # load demo
+    if len(patts) == 0: # load demo
         print("no saved patterns, loading demo patterns")
-        patterns = patterns_demo
-        for p in patterns:
-            p['seq'] = make_sequence_from_pattern_base(p)
+        patts = patterns_demo
+        for p in patts:
+            p['seq'] = make_sequence_from_demo_pattern(p)
 
-    return patterns  # not strictly needed currently, but wait for it...
+    return patts  # not strictly needed currently, but wait for it...
 
 # for debugging, print out current sequence when stopped
 def print_sequence(fp,pat):
@@ -212,12 +194,11 @@ def print_sequence(fp,pat):
     fp.write("    'len': %d,\n" % len(seq) )
     fp.write("    'seq': [\n")
     for i in range(len(seq)):
-        fp.write("       [" + ",".join('1' if e else '0' for e in seq[i]) + "],\n")
+        fp.write(f"       '{seq[i]:08b}',\n") # make string
     fp.write("    ],\n");
     fp.write("  },\n")
 
 def print_patterns():
-    return
     with sys.stdout as fp:
     #with open("/newpatterns.py", "w") as fp:
         fp.write("[\n")
@@ -328,6 +309,9 @@ def midi_receive():
 patterns = load_patterns()
 kits = find_kits()
 
+print("patterns",patterns)
+#print_patterns()
+
 # sequencer state
 step_millis = 0 # derived from bpm, changed by "update_bpm()" below
 last_step_millis = ticks_ms()
@@ -361,6 +345,8 @@ update_kit()
 update_encmode()
 
 print("macropadsynthplug drum machine ready!  bpm:", bpm, "step_millis:", step_millis, "steps:", num_steps)
+led_min = 5
+led_fade = 10
 
 while True:
 
@@ -381,7 +367,7 @@ while True:
                 leds[ keynum_to_padnum.index(i) ] = 0x111111
             if pads_lit[i]:   # also show pads being triggered, in nice JP-approved rainbows
                 leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
-        leds[:] = [[max(i-10,05) for i in l] for l in leds] # fade released drumpads slowly
+        leds[:] = [[max(i-led_fade,led_min) for i in l] for l in leds] # fade released drumpads slowly
         leds.show()
 
     # Sequencer playing
@@ -396,9 +382,11 @@ while True:
         if playing:
             for i in range(num_pads):
                 if not pads_played[i]:
-                    play_drum(i, sequence[seq_pos][i] )  # FIXME: what about note-off
+                    note_bit = 1<<(num_pads-1-i)
+                    play_drum(i, sequence[seq_pos] & note_bit ) # FIXME: what about note-off
+                    #play_drum(i, sequence[seq_pos][i] )  # FIXME: what about note-off
                 pads_played[i] = 0
-            if(debug): print("%2d %3d" % (late_millis, seq_pos), sequence[seq_pos])
+            if(debug): print(f"{late_millis:02d} {seq_pos:3d} {sequence[seq_pos]:08b}")
 
         # tempo indicator (leds.show() called by LED handler)
         if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
@@ -442,7 +430,8 @@ while True:
                 # if REC button held while pad press, erase track
                 if rec_held:
                     for i in range(num_steps):
-                        sequence[i][padnum] = 0
+                        sequence[i] &= ~(1<<(num_pads-1-padnum)) # clear trigs
+                    #    sequence[i][padnum] = 0
                 # if MUTE button held, mute/unmute track
                 elif mute_held:
                     pads_mute[padnum] = not pads_mute[padnum]
@@ -454,11 +443,13 @@ while True:
                         # fix up the quantization on record
                         diff = ticks_diff( ticks_ms(), last_step_millis )
                         if debug: print("*"*40, " diff:", diff)
-                        save_pos = (seq_pos//2)*2  # quantize, sigh
-                        # save_pos = seq_pos-1
-                        # if diff < step_millis//2:  #
-                        #     save_pos += 1
-                        sequence[ save_pos ][padnum] = 1   # save it
+                        #save_pos = (seq_pos//2)*2  # quantize, sigh
+                        save_pos = seq_pos -1
+                        if diff > step_millis//2:  #
+                            save_pos += 1
+                        note_bit = 1<<(num_pads-1-padnum)
+                        sequence[ save_pos ] |= note_bit  # save it
+                        #sequence[ save_pos ][padnum] = 1   # save it
                     # and start recording on the beat if set to record
                     if recording and not playing:
                         playing = True
