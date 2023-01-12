@@ -52,7 +52,7 @@ from drum_patterns import patterns_demo
 
 #time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
 
-use_macrosynthplug = False  # False to use built-in speaker of MacroPad RP2040
+use_macrosynthplug = True  # False to use built-in speaker of MacroPad RP2040
 debug = True
 
 patt_index = 0  # which sequence we're playing from our list of avail patterns
@@ -131,8 +131,8 @@ txt_emode2 = Label(font,text=" ",        x=0,  y=85)
 txt_bpm = Label(font, text="bpm:",       x=6,  y=85)
 txt_bpm_val = Label(font, text=str(bpm), x=35, y=85)
 
-txt_rcv = Label(font, text="midi:",      x=0, y=115)
-txt_info = Label(font, text="   ",    x=10, y=122)
+txt_rcv = Label(font, text="midi:",      x=0, y=110)
+txt_info = Label(font, text="   ",       x=0, y=120)
 for t in (txt1, txt2, txt3, txt_mode_val, txt_emode0, txt_emode1, txt_emode2,
           txt_patt, txt_kit, txt_bpm, txt_bpm_val, txt_rcv, txt_info):
     dispgroup.append(t)
@@ -161,11 +161,13 @@ def save_patterns():
     #    return
     last_write_time = time.monotonic()
     patts_to_sav = []
-    for i in range(len(patterns)):
-        patts_to_sav.append( { 'name':patterns[i]['name'], 'seq':seq_str } )
+    for p in patterns:
+        seq_to_sav = [''.join(str(c) for c in l) for l in p['seq']]
+        patts_to_sav.append( {'name': p['name'], 'seq': seq_to_sav } )
     with open('/test_saved_patterns.json', 'w') as fp:
+    #with sys.stdout as fp:
         json.dump(patts_to_sav, fp)
-    print("done")
+    print("\ndone")
 
 def load_patterns():
     patts = []
@@ -388,7 +390,7 @@ while True:
                 if not pads_played[i]: # but play only if we didn't just play it
                     play_drum(i, sequence[seq_pos][i] ) # FIXME: what about note-off
                 pads_played[i] = 0
-            if(debug): print(f"{late_millis:02d} {seq_pos:3d} {sequence[seq_pos]}")
+            if(debug): print("%2d %3d " % (late_millis, seq_pos), *sequence[seq_pos])
 
         # tempo indicator (leds.show() called by LED handler)
         if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
@@ -466,17 +468,18 @@ while True:
     if enc_sw:
         if enc_sw.pressed:
             enc_sw_press_millis = now
+            txt_info.text = 'hold2save'
         if enc_sw.released:
             if (now - enc_sw_press_millis) < 2000:  # press & release not press-hold
                 encoder_mode = (encoder_mode + 1) % 3  # only 3 modes for encoder currently
                 update_encmode()
-            else:
-                txt_info.text = ''
+            txt_info.text = ''
             enc_sw_press_millis = 0
 
     if enc_sw_press_millis and (now - enc_sw_press_millis) > 2000: # press-hold == save patterns
         txt_info.text = "saving"
         save_patterns()
+        enc_sw_press_millis = 0
 
     # Encoder turn handling
     encoder_val = encoder.position
