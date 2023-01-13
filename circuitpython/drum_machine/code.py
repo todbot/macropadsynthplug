@@ -52,7 +52,7 @@ from drum_patterns import patterns_demo
 
 #time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
 
-use_macrosynthplug = True  # False to use built-in speaker of MacroPad RP2040
+use_macrosynthplug = False  # False to use built-in speaker of MacroPad RP2040
 debug = True
 
 patt_index = 0  # which sequence we're playing from our list of avail patterns
@@ -141,15 +141,33 @@ for t in (txt1, txt2, txt3, txt_mode_val, txt_emode0, txt_emode1, txt_emode2,
 #
 # Sequence management
 #
+# pattern sequence data structure looks like:
+#
+# patterns = [
+#   { 'name': 'patt0',
+#     'seq': [
+#             # steps
+#             #                       1 1  1 1 1 1
+#             # 0 1 2 3  4 5 6 7  8 9 0 1  2 3 4 5  and so on (32)
+#             [ 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, ... ] # bd
+#             [ 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, ... ] # sd
+#             ... and so on to num_pads (8)
+#             ]
+#     ]
+#  },
+# ]
+#
 
+# extend a demo pattern that has a 'base' to a full 'seq'
 def make_sequence_from_demo_pattern(p):
     sq = []
-    for i in range(p['len']):  # FIXME: maybe 'base_len'? no but
-        stepline_str = p['base'][i % len(p['base'])] # get step line in base seq, maybe repeating
-        # convert str of '1010' to array 1,0,1,0, eliding whitespace, for all seq lines
-        stepline_str = stepline_str.replace(' ', '')  # collapse any whitespace
-        stepline = [int(c) for c in stepline_str]
-        sq.append( stepline ) # convert binary string to array of 1,0
+    # first convert '1010' step strings to 1,0,1,0 numeric array
+    for stepline_str in p['base']:
+        stepline = [int(c) for c in stepline_str.replace(' ','')]
+        sq.append(stepline)
+    # then extend 'base' to create 'seq'
+    num_copies = p['len'] // len(sq[0])
+    sq * num_copies
     return sq
 
 last_write_time = time.monotonic()
@@ -179,11 +197,12 @@ def load_patterns():
                 p['seq'] = [int(c) for c in s.replace(' ','') for s in p['seq']]
     except (OSError, ValueError) as error:  # maybe no file
         print("ERROR: load_patterns:",error)
+
     if len(patts) == 0: # load demo
         print("no saved patterns, loading demo patterns")
-        patts = patterns_demo
-        for p in patts:
-            p['seq'] = make_sequence_from_demo_pattern(p)
+        patts = []
+        for p in patterns_demo:
+            patts.append( {'name':p['name'], 'seq':  make_sequence_from_demo_pattern(p) } )
 
     return patts  # not strictly needed currently, but wait for it...
 
@@ -321,7 +340,7 @@ playing = False
 recording = False
 
 sequence = patterns[patt_index]['seq']  # sequence is array of [1,0,1,0]
-num_steps = len(sequence)  # number of steps
+num_steps = len(sequence[0])  # number of steps, based on length of first stepline
 
 # drumkit state
 kit_index = 0
@@ -388,9 +407,9 @@ while True:
         if playing:
             for i in range(num_pads):
                 if not pads_played[i]: # but play only if we didn't just play it
-                    play_drum(i, sequence[seq_pos][i] ) # FIXME: what about note-off
+                    play_drum(i, sequence[i][seq_pos] ) # FIXME: what about note-off
                 pads_played[i] = 0
-            if(debug): print("%2d %3d " % (late_millis, seq_pos), *sequence[seq_pos])
+            if(debug): print("%2d %3d " % (late_millis,seq_pos), [sequence[i][seq_pos] for i in range(num_pads)])
 
         # tempo indicator (leds.show() called by LED handler)
         if seq_pos % steps_per_beat == 0: leds[key_TAP_TEMPO] = 0x333333
@@ -438,7 +457,7 @@ while True:
                 if rec_held:
                     rec_held_used = True
                     for i in range(num_steps):
-                        sequence[i][padnum] = 0
+                        sequence[padnum][i] = 0
                 # if MUTE button held, mute/unmute track
                 elif mute_held:
                     pads_mute[padnum] = not pads_mute[padnum]
@@ -453,7 +472,7 @@ while True:
                         save_pos = seq_pos -1
                         if diff > step_millis//2:  #
                             save_pos += 1
-                        sequence[ save_pos ][padnum] = 1   # save it
+                        sequence[padnum][save_pos] = 1   # save it
                     # and start recording on the beat if set to record
                     if recording and not playing:
                         playing = True
