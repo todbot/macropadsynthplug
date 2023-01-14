@@ -11,9 +11,9 @@
 # - Push encoder to switch between pattern changing mode & BPM changing mode
 #
 #  +-------+------+------+------+------+
-#  |  ---  |      |      |      |      |
+#  | .---. |      |      |      |      |
 #  | | O | | Play | Rec  | Mute | Tap  |
-#  |  ---  |      |      |      |      |
+#  | `---' |      |      |      |      |
 #  | ----- +------+------+------+------+
 #  | |   | |      |      |      |      |
 #  | |   | |  4   |  5   |  6   |  7   |
@@ -37,22 +37,21 @@ print("macropadsynthplug drum machine start!")
 
 import time, os, sys, json
 import board, busio, keypad, rotaryio, digitalio
-import displayio, terminalio
 import rainbowio
 import neopixel
 import audiocore, audiomixer, audiopwmio
 from adafruit_ticks import ticks_ms, ticks_diff, ticks_add
-from adafruit_display_text.bitmap_label import Label
 import usb_midi
 import adafruit_midi
 from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 
+from drum_display import disp_bpm, disp_play, disp_pattern, disp_kit, disp_info, disp_encmode
 from drum_patterns import patterns_demo
 
 #time.sleep(3) # wait for USB connect a bit to avoid terible audio glitches
 
-use_macrosynthplug = False  # False to use built-in speaker of MacroPad RP2040
+use_macrosynthplug = True  # False to use built-in speaker of MacroPad RP2040
 debug = True
 
 patt_index = 0  # which sequence we're playing from our list of avail patterns
@@ -74,7 +73,6 @@ keynum_to_padnum = (0, 4, -1, # pad nums go from bottom row of four: 0,1,2,3
                     1, 5, -1, # then above that, next row of four 4,5,6,7
                     2, 6, -1, # and top row are invalid pad nums (buttons used for transport)
                     3, 7, -1)
-# maybe we invert this, since we call .index() more often
 
 #
 # Set up hardware
@@ -108,39 +106,10 @@ mixer = audiomixer.Mixer(voice_count=num_pads, sample_rate=22050, channel_count=
                          bits_per_sample=16, samples_signed=True, buffer_size=4096)
 audio.play(mixer) # attach mixer to audio playback
 
-
-# display setup begin
-dw,dh = 64,128
-display = board.DISPLAY
-display.rotation = 90
-font = terminalio.FONT
-dispgroup = displayio.Group()
-display.show(dispgroup)
-txt1 = Label(font, text="macropad",      x=0,  y=10)
-txt2 = Label(font, text="synthplug",     x=0,  y=20)
-txt3 = Label(font, text="drumachine",    x=0,  y=30)
-
-txt_mode_val = Label(font, text="stop",  x=40, y=45)
-
-txt_emode0 = Label(font,text=">",        x=0,  y=55)
-txt_patt = Label(font, text="patt",      x=6,  y=55)
-txt_emode1 = Label(font,text=" ",        x=0,  y=70)
-txt_kit = Label(font, text="kit:",       x=6,  y=70)
-#txt_kit_val = Label(font, text="kitt",   x=6,  y=85)
-txt_emode2 = Label(font,text=" ",        x=0,  y=85)
-txt_bpm = Label(font, text="bpm:",       x=6,  y=85)
-txt_bpm_val = Label(font, text=str(bpm), x=35, y=85)
-
-txt_rcv = Label(font, text="midi:",      x=0, y=110)
-txt_info = Label(font, text="   ",       x=0, y=120)
-for t in (txt1, txt2, txt3, txt_mode_val, txt_emode0, txt_emode1, txt_emode2,
-          txt_patt, txt_kit, txt_bpm, txt_bpm_val, txt_rcv, txt_info):
-    dispgroup.append(t)
-# display setup end
-
 #
 # Sequence management
 #
+
 # pattern sequence data structure looks like:
 #
 # patterns = [
@@ -196,7 +165,7 @@ def load_patterns():
                 # convert str of '1010' to array 1,0,1,0, eliding whitespace, for all seq lines
                 p['seq'] = [int(c) for c in s.replace(' ','') for s in p['seq']]
     except (OSError, ValueError) as error:  # maybe no file
-        print("ERROR: load_patterns:",error)
+        print("load_patterns:",error)
 
     if len(patts) == 0: # load demo
         print("no saved patterns, loading demo patterns")
@@ -206,25 +175,24 @@ def load_patterns():
 
     return patts  # not strictly needed currently, but wait for it...
 
-# for debugging, print out current sequence when stopped
-def print_sequence(fp,pat):
-    seq = pat['seq']
-    fp.write("  {\n")
-    fp.write("    'name':'%s',\n" % pat['name'])
-    fp.write("    'len': %d,\n" % len(seq) )
-    fp.write("    'seq': [\n")
-    for i in range(len(seq)):
-        fp.write(f"       '{seq[i]:08b}',\n") # make string
-    fp.write("    ],\n");
-    fp.write("  },\n")
+def copy_current_pattern():
+    global patt_index, sequence
+    pname = patterns[patt_index]['name']
+    #seq_new = [l.copy() for l in patterns[patt_index]['seq']]  # copy list of lists
+    seq_new = [l.copy() for l in sequence]  # copy list of lists
+    new_patt = { 'name': 'cptst1',
+                 'seq': seq_new }
+    patt_index = patt_index + 1
+    patterns.insert(patt_index, new_patt)
+    sequence = patterns[patt_index]['seq']
 
-def print_patterns():
-    with sys.stdout as fp:
-    #with open("/newpatterns.py", "w") as fp:
-        fp.write("[\n")
-        for p in patterns:
-            print_sequence(fp,p)
-        fp.write("]\n")
+def update_step_millis():
+    global step_millis
+    # Beat timing assumes 4/4 time signature, e.g. 4 beats per measure, 1/4 note gets the beat
+    beat_time = 60 / bpm  # time length of a single beat
+    beat_millis = beat_time * 1000  # time length of single beat in milliseconds
+    step_millis = int(beat_millis / steps_per_beat)  # time length of a beat subdivision, e.g. 1/16th note
+    # and keep "step_millis" an int so diff math is fast
 
 #
 # Drum kit management
@@ -268,42 +236,7 @@ def play_drum(num, pressed):
     if pressed and not pads_mute[num]:
         voice.play(waves[num],loop=False)
     else: # released
-        pass   # not doing this
-
-
-#
-# Display updates
-#
-
-# update step_millis and display
-def update_bpm():
-    global step_millis
-    # Beat timing assumes 4/4 time signature, e.g. 4 beats per measure, 1/4 note gets the beat
-    beat_time = 60 / bpm  # time length of a single beat
-    beat_millis = beat_time * 1000  # time length of single beat in milliseconds
-    step_millis = int(beat_millis / steps_per_beat)  # time length of a beat subdivision, e.g. 1/16th note
-    txt_bpm_val.text = str(bpm)
-    # and keep "step_millis" an int so diff math is fast
-
-# update display
-def update_play():
-    if playing:
-        txt_mode_val.text = "play" if not recording else "odub"
-    else:
-        txt_mode_val.text = "stop" if not recording else "reco"  # FIXME:
-
-# update display
-def update_pattern():
-    txt_patt.text = patterns[patt_index]['name']
-
-def update_kit():
-    txt_kit.text = kits['kit_names'][kit_index]
-
-# update display
-def update_encmode():
-    txt_emode0.text = '>' if encoder_mode==0 else ' '
-    txt_emode1.text = '>' if encoder_mode==1 else ' '
-    txt_emode2.text = '>' if encoder_mode==2 else ' '
+        pass   # not doing this for samples
 
 #
 # MIDI
@@ -329,11 +262,10 @@ def midi_receive():
 patterns = load_patterns()
 kits = find_kits()
 
-print("patterns",patterns)
-#print_patterns()
+if debug: print("patterns",patterns)
 
 # sequencer state
-step_millis = 0 # derived from bpm, changed by "update_bpm()" below
+step_millis = 0 # derived from bpm, changed by "update_step_millis()" below
 last_step_millis = ticks_ms()
 seq_pos = 0  # where in our sequence we are
 playing = False
@@ -358,18 +290,19 @@ tap_held = False  # is TAP/TEMPO button held
 enc_sw_press_millis = 0
 encoder_val_last = encoder.position
 encoder_mode = 0  # 0 = change pattern, 1 = change kit, 2 = change bpm
+led_min = 5  # how much to fade LEDs by
+led_fade = 10 # how much to fade LEDs by
 
 load_drumkit()
+update_step_millis()
 
-update_bpm()
-update_play()
-update_pattern()
-update_kit()
-update_encmode()
+disp_bpm(bpm)
+disp_play(playing,recording)
+disp_pattern( patterns[patt_index]['name'] )
+disp_kit( kits['kit_names'][kit_index] )
+disp_encmode( encoder_mode )
 
 print("macropadsynthplug drum machine ready!  bpm:", bpm, "step_millis:", step_millis, "steps:", num_steps)
-led_min = 5
-led_fade = 10
 
 while True:
 
@@ -377,22 +310,29 @@ while True:
 
     now = ticks_ms()
 
+    enc_sw_held = enc_sw_press_millis !=0  and (now - enc_sw_press_millis > 500)
+
     # LED handling
     if ticks_diff(now, last_led_millis) > 10:  # update every 10 msecs
         last_led_millis = now
-        leds[key_PLAY]   = 0x00FF00 if playing else 0x114400
-        #leds[key_RECORD] = 0xFF0000 if recording else 0x440044 if rec_held else 0x441100
-        leds[key_RECORD] = 0xFF0044 if rec_held else 0xFF0000 if recording else 0x440011
-        leds[key_MUTE]   = 0x001144  # mute mode button
-        for i in range(num_pads):  # light up pressed drumpads
-            if mute_held:  # show mute state instead
-                leds[ keynum_to_padnum.index(i) ] = 0x000000 if pads_mute[i] else 0x001144
-            elif rec_held:
-                leds[ keynum_to_padnum.index(i) ] = 0xAA0022
-            elif tap_held and not playing:  # light up special mode if holding taptemp button
-                leds[ keynum_to_padnum.index(i) ] = 0x111111
-            if pads_lit[i]:   # also show pads being triggered, in nice JP-approved rainbows
-                leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
+        if enc_sw_held:  # edit mode
+            leds[key_PLAY] = 0x44FF00
+            leds[key_RECORD] = 0xFF4400
+            leds[key_MUTE] = 0x0044FF
+        else:
+            leds[key_PLAY]   = 0x00FF00 if playing else 0x114400
+            leds[key_RECORD] = 0xFF0044 if rec_held else 0xFF0000 if recording else 0x440011
+            leds[key_MUTE]   = 0x001144  # mute mode button
+
+            for i in range(num_pads):  # light up pressed drumpads
+                if mute_held:  # show mute state instead
+                    leds[ keynum_to_padnum.index(i) ] = 0x000000 if pads_mute[i] else 0x001144
+                elif rec_held:
+                    leds[ keynum_to_padnum.index(i) ] = 0xAA0022
+                elif tap_held and not playing:  # light up special mode if holding taptemp button
+                    leds[ keynum_to_padnum.index(i) ] = 0x111111
+                if pads_lit[i]:   # also show pads being triggered, in nice JP-approved rainbows
+                    leds[ keynum_to_padnum.index(i) ] = rainbowio.colorwheel( int(time.monotonic() * 20) )
 
         leds[:] = [[max(i-led_fade,led_min) for i in l] for l in leds] # fade released drumpads slowly
         leds.show()
@@ -424,25 +364,37 @@ while True:
 
         if keynum == key_PLAY:
             if key.pressed:
-                playing = not playing
-                if playing:
-                    last_playing_millis = ticks_add(now, -step_millis)  # start playing!
-                    seq_pos = 0
-                else:  # we are stopped
-                    recording = False # so turn off recording too
-                    for i in range(num_pads):
-                        play_drum(i,0)
-                update_play()
+                if not enc_sw_held:  # normal play behavior
+                    playing = not playing
+                    if playing:
+                        last_playing_millis = ticks_add(now, -step_millis)  # start playing!
+                        seq_pos = 0
+                    else:  # we are stopped
+                        recording = False # so turn off recording too
+                        for i in range(num_pads):
+                            play_drum(i,0)
+                    disp_play(playing,recording)
+                else:
+                    disp_info("copy patt")
+                    copy_current_pattern()
+                    disp_pattern( patterns[patt_index]['name'] )
+                    disp_info("")
 
         elif keynum == key_RECORD:
             if key.pressed:
-                rec_held = True
-                rec_held_used = False
-            if key.released:
+                if not enc_sw_held:  # normal record behavior
+                    rec_held = True
+                    rec_held_used = False
+                else:
+                    disp_info("save patts")
+                    save_patterns()
+                    disp_info("")
+
+            if key.released and not enc_sw_held:
                 rec_held = False
                 if not rec_held_used:
                     recording = not recording # toggle record state
-                    update_play()
+                    disp_play(playing,recording)
 
         elif keynum == key_MUTE:
             mute_held = key.pressed
@@ -487,18 +439,13 @@ while True:
     if enc_sw:
         if enc_sw.pressed:
             enc_sw_press_millis = now
-            txt_info.text = 'hold2save'
         if enc_sw.released:
-            if (now - enc_sw_press_millis) < 2000:  # press & release not press-hold
+            if not enc_sw_held:  # press & release not press-hold
                 encoder_mode = (encoder_mode + 1) % 3  # only 3 modes for encoder currently
-                update_encmode()
-            txt_info.text = ''
+                disp_encmode(encoder_mode)
+                disp_info("")
             enc_sw_press_millis = 0
 
-    if enc_sw_press_millis and (now - enc_sw_press_millis) > 2000: # press-hold == save patterns
-        txt_info.text = "saving"
-        save_patterns()
-        enc_sw_press_millis = 0
 
     # Encoder turn handling
     encoder_val = encoder.position
@@ -507,14 +454,13 @@ while True:
         encoder_val_last = encoder_val
         if encoder_mode == 0:  # mode 1 == change pattern
             patt_index = (patt_index + encoder_delta) % len(patterns)
-            print("pattern:", patt_index)
-            #sequence = make_sequence(patterns[patt_index])
             sequence = patterns[patt_index]['seq']
-            update_pattern()
+            disp_pattern( patterns[patt_index]['name'] )
         elif encoder_mode == 1:  # mode 1 == change kit
             kit_index = (kit_index + encoder_delta) % len(kits['kit_names'])
             load_drumkit()
-            update_kit()
+            disp_kit( kits['kit_names'][kit_index] )
         elif encoder_mode == 2:  # mode 0 == update BPM
             bpm += encoder_delta
-            update_bpm()
+            update_step_millis()
+            disp_bpm(bpm)
