@@ -11636,12 +11636,12 @@ StemmaQT pins are connected to:
 <segment>
 <pinref part="J2" gate="G$1" pin="RING1"/>
 <wire x1="88.9" y1="43.18" x2="83.82" y2="43.18" width="0.1524" layer="91"/>
-<pinref part="J2" gate="G$1" pin="RING2"/>
-<wire x1="88.9" y1="50.8" x2="83.82" y2="50.8" width="0.1524" layer="91"/>
-<wire x1="83.82" y1="43.18" x2="83.82" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="83.82" y1="43.18" x2="83.82" y2="48.26" width="0.1524" layer="91"/>
 <wire x1="83.82" y1="43.18" x2="76.2" y2="43.18" width="0.1524" layer="91"/>
 <junction x="83.82" y="43.18"/>
 <label x="76.2" y="43.18" size="1.778" layer="95"/>
+<pinref part="J2" gate="G$1" pin="TIP"/>
+<wire x1="88.9" y1="48.26" x2="83.82" y2="48.26" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$48" class="0">

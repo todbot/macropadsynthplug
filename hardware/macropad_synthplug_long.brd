@@ -218,7 +218,7 @@
 <text x="58.166" y="6.096" size="1.016" layer="22" rot="MR0">Audio Line Out</text>
 <dimension x1="-12.77611875" y1="30.58904375" x2="0" y2="2.54" x3="-23.3132375" y3="16.564521875" textsize="1.778" layer="47" dtype="vertical" unit="inch"/>
 <text x="12.7" y="11.684" size="1.016" layer="22" rot="MR0">StemmaQT / Qwiic</text>
-<text x="41.91" y="3.556" size="1.016" layer="22" rot="MR0">4 Jan 2023 - macropad_synthplug_long</text>
+<text x="41.91" y="3.556" size="1.016" layer="22" rot="MR0">14 Jan 2023 - macropad_synthplug_long</text>
 <text x="7.62" y="26.67" size="1.016" layer="21">MacroPad SynthPlug for MacroPad RP2040</text>
 </plain>
 <libraries>
@@ -10877,16 +10877,16 @@ einem neuen Namen ab.</description>
 <wire x1="36.83" y1="10.094" x2="40.64" y2="10.094" width="0.254" layer="1"/>
 <wire x1="43.688" y1="7.112" x2="47.134" y2="3.666" width="0.254" layer="1"/>
 <contactref element="J2" pad="RING1"/>
-<contactref element="J2" pad="RING2"/>
 <wire x1="53.49" y1="4.468" x2="53.49" y2="5.894" width="0.254" layer="1"/>
-<wire x1="47.134" y1="3.666" x2="52.688" y2="3.666" width="0.254" layer="1"/>
+<wire x1="47.134" y1="3.666" x2="49.53" y2="3.666" width="0.254" layer="1"/>
+<wire x1="49.53" y1="3.666" x2="52.688" y2="3.666" width="0.254" layer="1"/>
 <wire x1="53.49" y1="4.468" x2="52.688" y2="3.666" width="0.254" layer="1"/>
-<wire x1="52.688" y1="3.666" x2="55.736" y2="3.666" width="0.254" layer="1"/>
-<wire x1="56.49" y1="4.42" x2="56.49" y2="5.894" width="0.254" layer="1"/>
-<wire x1="55.736" y1="3.666" x2="56.49" y2="4.42" width="0.254" layer="1"/>
 <wire x1="40.64" y1="10.094" x2="42.484" y2="10.094" width="0.254" layer="1"/>
 <wire x1="43.688" y1="8.89" x2="43.688" y2="7.112" width="0.254" layer="1"/>
 <wire x1="42.484" y1="10.094" x2="43.688" y2="8.89" width="0.254" layer="1"/>
+<contactref element="J2" pad="TIP"/>
+<wire x1="49.49" y1="5.894" x2="49.53" y2="5.854" width="0.254" layer="1"/>
+<wire x1="49.53" y1="5.854" x2="49.53" y2="3.666" width="0.254" layer="1"/>
 </signal>
 <signal name="N$48">
 <contactref element="C2" pad="1"/>
