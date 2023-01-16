@@ -42,9 +42,11 @@ import neopixel
 import audiocore, audiomixer, audiopwmio
 from adafruit_ticks import ticks_ms, ticks_diff, ticks_add
 import usb_midi
-import adafruit_midi
-from adafruit_midi.note_on import NoteOn
-from adafruit_midi.note_off import NoteOff
+#import winterbloom_smolmidi as smolmidi
+import todbot_smolishmidi as smolmidi
+#import adafruit_midi
+#from adafruit_midi.note_on import NoteOn
+#from adafruit_midi.note_off import NoteOff
 
 from drum_display import disp_bpm, disp_play, disp_pattern, disp_kit, disp_info, disp_encmode
 from drum_patterns import patterns_demo
@@ -80,9 +82,10 @@ keynum_to_padnum = (0, 4, -1, # pad nums go from bottom row of four: 0,1,2,3
 
 # macropadsynthplug!
 midi_uart = busio.UART(rx=board.SCL, tx=None, baudrate=31250, timeout=0.001)
-#midi_uart_in = smolmidi.MidiIn(midi_uart) # can't do smolmidi because it wants port.readinto(buf,len)
-midi_uart_in = adafruit_midi.MIDI( midi_in=midi_uart) # , debug=False)
-midi_usb_in = adafruit_midi.MIDI( midi_in=usb_midi.ports[0])
+midi_uart_in = smolmidi.MidiIn(midi_uart) # can't do smolmidi because it wants port.readinto(buf,len)
+midi_usb_in = smolmidi.MidiIn(usb_midi.ports[0]) # can't do smolmidi because it wants port.readinto(buf,len)
+#midi_uart_in = adafruit_midi.MIDI( midi_in=midi_uart) # , debug=False)
+#midi_usb_in = adafruit_midi.MIDI( midi_in=usb_midi.ports[0])
 
 leds = neopixel.NeoPixel(board.NEOPIXEL, 12, brightness=0.2, auto_write=False)
 leds.fill(0xff00ff); leds.show()
@@ -242,16 +245,27 @@ def play_drum(num, pressed):
 # MIDI
 #
 
-# Get midi from UART or USB
-def midi_receive():
+# # Get midi from UART or USB
+def midi_receive_smol():
     while msg := midi_uart_in.receive() or midi_usb_in.receive():  # walrus!
         if msg is not None:
-            print(time.monotonic(), msg)
+            if msg.type == smolmidi.NOTE_ON:
+                print("noteON:  %02d %02X" % (msg.data[0], msg.data[1]))
+                play_drum( msg.data[0] % num_pads, True)
+            if msg.type == smolmidi.NOTE_OFF:
+                print("noteOFF: %02d %02X" % (msg.data[0], msg.data[1]))
+                play_drum( msg.data[0] % num_pads, False)
+
+# Get midi from UART or USB
+def midi_receive_ada():
+    while msg := midi_uart_in.receive() or midi_usb_in.receive():  # walrus!
+        if msg is not None:
+            #if debug: print(time.monotonic(), msg)
             if isinstance(msg, NoteOn) and msg.velocity:
-                print("noteOn:",msg.note, msg.note % 12)
-                play_drum( msg.note % 12, True)
+                #if debug: print("noteOn:",msg.note, msg.note % num_pads)
+                play_drum( msg.note % num_pads, True)
             if isinstance(msg,NoteOff) or (isinstance(msg, NoteOn) and msg.velocity==0):
-                play_drum( msg.note % 12, False)
+                play_drum( msg.note % num_pads, False)
 
 
 #
@@ -306,7 +320,8 @@ print("macropadsynthplug drum machine ready!  bpm:", bpm, "step_millis:", step_m
 
 while True:
 
-    # midi_receive()
+    midi_receive_smol()
+    #midi_receive_ada()
 
     now = ticks_ms()
 
@@ -434,6 +449,10 @@ while True:
             if key.released:
                 play_drum( padnum, 0 ) # don't strictly need this
 
+    # Encoder hold handling
+    if enc_sw_held:
+        disp_info("editmode")
+
     # Encoder push handling
     enc_sw = encoder_switch.events.get()
     if enc_sw:
@@ -443,7 +462,7 @@ while True:
             if not enc_sw_held:  # press & release not press-hold
                 encoder_mode = (encoder_mode + 1) % 3  # only 3 modes for encoder currently
                 disp_encmode(encoder_mode)
-                disp_info("")
+            disp_info("")
             enc_sw_press_millis = 0
 
 
