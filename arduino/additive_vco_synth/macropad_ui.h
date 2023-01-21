@@ -88,9 +88,9 @@ void loop1() {
   if (encoder_pos != newPos) {
     Serial.print("gain: "); Serial.print(gain); Serial.print(" harm:"); Serial.println(harm_knob);
     if(edit_mode == 0 ) { 
-      gain += (newPos - encoder_pos);
+      gain_knob += (newPos - encoder_pos)*2;
     } else if( edit_mode == 1 ) { 
-      harm_knob += (newPos - encoder_pos);
+      harm_knob += (newPos - encoder_pos)*2;
     }
     encoder_pos = newPos;
   }
@@ -105,16 +105,16 @@ void loop1() {
 //  display.setTextSize(2); // Draw 2X-scale text
   display.setTextSize(1);
   display.setTextColor(SH110X_WHITE, SH110X_BLACK); // white text, black background
-  display.println(F("hello world"));
+  display.println(F("synthplug    additivevco"));
 
   //display.setFont(0); // go back to built-in font
   display.setFont(&myfont2);
   display.setTextSize(1);
-  display.setCursor(0,45);
-  display.print("vol:");
-  display.setCursor(50, 45);
-  display.print(encoder_pos);
-  display.setCursor(110, 45);
+  display.setCursor(0,  45);  display.print("gain:");
+  display.setCursor(30, 45);  display.print(gain_knob);
+  display.setCursor(60, 45);  display.print("harm:");
+  display.setCursor(90, 45);  display.print(harm_knob);
+  display.setCursor(110,45);
   display.print(encoder_pressed ? "*" : ".");
 
   display.setCursor(0, 60);
