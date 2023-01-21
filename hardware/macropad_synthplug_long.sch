@@ -11468,6 +11468,7 @@ DIN A4, landscape with location and doc. field</description>
 <part name="GND2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="J3" library="audio_jacks_todbot" deviceset="AUDIO-JACK-TRRS" device=""/>
 <part name="GND1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="GND3" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -11571,8 +11572,8 @@ StemmaQT pins are connected to:
 <attribute name="VALUE" x="88.9" y="53.34" size="1.778" layer="96"/>
 <attribute name="LCSC" x="99.06" y="45.72" size="1.778" layer="96" rot="R180" display="off"/>
 </instance>
-<instance part="GND2" gate="1" x="88.9" y="38.1" smashed="yes">
-<attribute name="VALUE" x="86.36" y="35.56" size="1.778" layer="96"/>
+<instance part="GND2" gate="1" x="83.82" y="38.1" smashed="yes">
+<attribute name="VALUE" x="81.28" y="35.56" size="1.778" layer="96"/>
 </instance>
 <instance part="J3" gate="G$1" x="0" y="81.28" smashed="yes">
 <attribute name="NAME" x="0" y="86.868" size="1.778" layer="95"/>
@@ -11580,6 +11581,9 @@ StemmaQT pins are connected to:
 </instance>
 <instance part="GND1" gate="1" x="10.16" y="88.9" smashed="yes" rot="R180">
 <attribute name="VALUE" x="12.7" y="91.44" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="GND3" gate="1" x="83.82" y="53.34" smashed="yes" rot="R180">
+<attribute name="VALUE" x="86.36" y="55.88" size="1.778" layer="96" rot="R180"/>
 </instance>
 </instances>
 <busses>
@@ -11618,10 +11622,16 @@ StemmaQT pins are connected to:
 <segment>
 <pinref part="J2" gate="G$1" pin="EARTH"/>
 <pinref part="GND2" gate="1" pin="GND"/>
+<wire x1="83.82" y1="40.64" x2="88.9" y2="40.64" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="J3" gate="G$1" pin="EARTH"/>
 <pinref part="GND1" gate="1" pin="GND"/>
+</segment>
+<segment>
+<pinref part="J2" gate="G$1" pin="RING2"/>
+<pinref part="GND3" gate="1" pin="GND"/>
+<wire x1="83.82" y1="50.8" x2="88.9" y2="50.8" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="AUDIO_OUT" class="0">

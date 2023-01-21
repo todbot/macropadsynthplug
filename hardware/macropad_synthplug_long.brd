@@ -10870,6 +10870,7 @@ einem neuen Namen ab.</description>
 <via x="21.844" y="22.86" extent="1-16" drill="0.4064"/>
 <contactref element="J2" pad="EARTH"/>
 <contactref element="J3" pad="EARTH"/>
+<contactref element="J2" pad="RING2"/>
 </signal>
 <signal name="AUDIO_OUT">
 <contactref element="R3" pad="1"/>
