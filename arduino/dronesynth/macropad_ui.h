@@ -38,7 +38,10 @@ uint32_t last_encoder_millis = 0;
 // values used by Mozzi on core0
 byte root_note = 48; // MIDI base note
 int osc_vals[ NUM_KEYS ];
-bool scatterMode = false;
+byte volumeAmount = 15; // 0-15
+byte scatterAmount = 0; // 0-50?
+byte filterAmount = 70;
+byte editMode = 0; // 0 = edit freqs, 1 = edit scattermode, 2 = edit volume
 //
 
 int notenum_to_oct(int notenum) {
@@ -46,7 +49,8 @@ int notenum_to_oct(int notenum) {
 }
 
 const char* notenum_to_notestr(int notenum) {
-  const char* note_strs[] = { "C ", "C#", "D ", "D# ", "E ", "F ", "F#", "G ", "G#", "A ", "A#", "B ", "C "};
+  const char* note_strs[] = {"C ", "C#", "D ", "D#", "E ", "F ", // 0-12
+                             "F#", "G ", "G#", "A ", "A#", "B ", "C ", }; 
   return note_strs[ notenum % 12 ];
 }
 
@@ -107,7 +111,6 @@ void loop1() {
   leds.show();
   
   // ENCODER
-  encoder_switch.update();
   encoder.tick();
   if( millis() - last_encoder_millis > 20 ) { 
     last_encoder_millis = millis();
@@ -128,11 +131,21 @@ void loop1() {
       }
       // if no keys pressed, just turning knob lets us change rootnote
       if(!keyed) { 
-        root_note = constrain( root_note + dv, 0,120);
+        if( editMode == 0 ) { 
+          root_note = constrain( root_note + dv, 0,120);
+        } else if( editMode == 1 ) { 
+          scatterAmount = constrain( scatterAmount + dv, 0,50);
+        } else if( editMode == 2 ) {
+          filterAmount = constrain( filterAmount + dv, 0,127);
+        } else if( editMode == 3 ) {
+          volumeAmount = constrain( volumeAmount + dv, 0,15);
+        }        
       }
     }
   }
   
+  // ENCODER switch
+  encoder_switch.update();
   if( encoder_switch.fell() ) {  // pressed
     bool keyed = false;
     for( int i=0; i<NUM_KEYS; i++ ) { 
@@ -142,13 +155,11 @@ void loop1() {
       }
     }
     if(!keyed) {
-      scatterMode = !scatterMode;
+      //scatterMode = !scatterMode;
+      editMode = (editMode + 1) % 4; // 4 = number of modes
+      Serial.printf("editMode:%d\n",editMode);
     }
   }
-//  if( encoder_switch.rose() ) { // released
-//    scatterMode = false;
-//  }
-  bool encoder_pressed = encoder_switch.read() == LOW;
   
   display.clearDisplay();
   display.setTextColor(SH110X_WHITE, SH110X_BLACK); // white text, black background
@@ -157,21 +168,39 @@ void loop1() {
   display.setFont(&myfont2);
   display.setTextSize(1);
   display.setCursor(0, 10);
-  display.println(F("mpsp drone"));
+  display.println(F("MPSP DRONE"));
 
   //display.setFont(0); // go back to built-in font
   display.setFont(&myfont2);
   display.setTextSize(1);
 
-//  display.setCursor(0,40);
-//  display.printf("root: %s%d", notenum_to_notestr(root_note), notenum_to_oct(root_note));
-//  
-  display.setCursor(0,60);
+  display.setCursor(4,30);
+  display.printf("scatter:%2d", scatterAmount);
+  display.setCursor(4,40);
+  display.printf("filt:%2d", filterAmount);
+  display.setCursor(4,50);
+  display.printf("volume:%2d", volumeAmount);
+  display.setCursor(4,60);
   display.printf("root: %s%d", notenum_to_notestr(root_note), notenum_to_oct(root_note));
- 
+
+  if( editMode == 0 ) { 
+    display.drawRect(0,52, 65,11, SH110X_WHITE);
+  }
+  else if( editMode == 1 ) { 
+    display.drawRect(0,22, 65,11, SH110X_WHITE); // scatter
+  }
+  else if( editMode == 2 ) { 
+    display.drawRect(0,32, 65,11, SH110X_WHITE); // filter
+  }
+  else if( editMode == 3 ) { 
+    display.drawRect(0,42, 65,11, SH110X_WHITE); // volume
+  }
+
+  display.setCursor(100,63);  display.print("oscs");
+  display.drawRect(65,0, 62,58, SH110X_WHITE); // osc grid
   for( int i=0; i<NUM_KEYS; i++ ) {
     if( keys[i].read() == LOW ) { // == pressed (active low)
-      display.drawRect(65 + 20*(i%3), 0 + 15*(i/3), 20,15, SH110X_WHITE);
+      display.drawRect(65 + 20*(i%3), 0 + 15*(i/3), 20,12, SH110X_WHITE);
     }
   }
   for( int i=0; i<NUM_KEYS/4; i++ ) {
@@ -184,10 +213,7 @@ void loop1() {
     display.setCursor(60 + (i*20), 55);
     display.printf("%4d", osc_vals[i + 3*(NUM_KEYS/4)]);
   }
-  
-  display.setCursor(60,10);
-  display.print(scatterMode ? "*" : ".");
-  
+   
   display.display();
 
 }
