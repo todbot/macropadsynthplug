@@ -17,6 +17,8 @@ const int NUM_KEYS = 12;
 const int DW = 128;
 const int DH = 64;
 
+const int MAX_TUNE = 96;
+
 const int key_pins[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 
 Bounce keys[NUM_KEYS];
@@ -36,6 +38,7 @@ uint32_t last_encoder_millis = 0;
 // values used by Mozzi on core0
 byte root_note = 48; // MIDI base note
 int osc_vals[ NUM_KEYS ];
+bool scatterMode = false;
 //
 
 int notenum_to_oct(int notenum) {
@@ -116,27 +119,35 @@ void loop1() {
       Serial.printf("delta:%d\n",deltaPos);
       int dv = deltaPos*deltaPos*deltaPos; // cubic for fast turning
       // check to see if any keys are pressed, if so change their osc values
-      bool keymode = false;
+      bool keyed = false;
       for( int i=0; i<NUM_KEYS; i++ ) { 
         if( keys_pressed[i] ) { 
-          osc_vals[i] = constrain(osc_vals[i] + dv, -99,99);
-          keymode = true;
+          osc_vals[i] = constrain(osc_vals[i] + dv, -MAX_TUNE,MAX_TUNE);
+          keyed = true;
         }
       }
       // if no keys pressed, just turning knob lets us change rootnote
-      if(!keymode) { 
+      if(!keyed) { 
         root_note = constrain( root_note + dv, 0,120);
       }
     }
   }
   
   if( encoder_switch.fell() ) {  // pressed
+    bool keyed = false;
     for( int i=0; i<NUM_KEYS; i++ ) { 
       if( keys_pressed[i] ) {
-        osc_vals[i] = osc_vals[i]==0 ? random(-99,99) : 0;
+        osc_vals[i] = osc_vals[i]==0 ? random(-MAX_TUNE,MAX_TUNE) : 0;
+        keyed = true;
       }
     }
+    if(!keyed) {
+      scatterMode = !scatterMode;
+    }
   }
+//  if( encoder_switch.rose() ) { // released
+//    scatterMode = false;
+//  }
   bool encoder_pressed = encoder_switch.read() == LOW;
   
   display.clearDisplay();
@@ -152,7 +163,10 @@ void loop1() {
   display.setFont(&myfont2);
   display.setTextSize(1);
 
-  display.setCursor(0,25);
+//  display.setCursor(0,40);
+//  display.printf("root: %s%d", notenum_to_notestr(root_note), notenum_to_oct(root_note));
+//  
+  display.setCursor(0,60);
   display.printf("root: %s%d", notenum_to_notestr(root_note), notenum_to_oct(root_note));
  
   for( int i=0; i<NUM_KEYS; i++ ) {
@@ -171,8 +185,8 @@ void loop1() {
     display.printf("%4d", osc_vals[i + 3*(NUM_KEYS/4)]);
   }
   
-  display.setCursor(110,15);
-  display.print(encoder_pressed ? "@" : ".");
+  display.setCursor(60,10);
+  display.print(scatterMode ? "*" : ".");
   
   display.display();
 
