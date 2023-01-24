@@ -22,7 +22,6 @@
  * - Select "Tools / Flash Size: 2MB (Sketch: 1MB / FS: 1MB)
  */
 
-#include "macropad_ui.h"
 
 //#define CONTROL_RATE 128   // sets update rate of Mozzi's updateControl() function
 #include <MozziGuts.h>
@@ -31,6 +30,7 @@
 #include <tables/cos2048_int8.h> // filter modulation waveform
 #include <LowPassFilter.h>
 #include <Portamento.h>
+#include <ADSR.h>
 #include <mozzi_rand.h>  // for rand()
 #include <mozzi_midi.h>  // for mtof()
 
@@ -38,11 +38,14 @@
 
 Oscil<SAW_ANALOGUE512_NUM_CELLS, AUDIO_RATE> aOscs [NUM_OSCS];
 Portamento <CONTROL_RATE> portamentos[NUM_OSCS];
+ADSR <CONTROL_RATE, AUDIO_RATE> envelope;
 
 LowPassFilter lpf;
 uint8_t resonance = 140; // range 0-255, 255 is most resonant
 uint8_t cutoff = 70;
 int portamento_time = 400;
+
+#include "macropad_ui.h"
 
 
 // core0 setup
@@ -63,11 +66,15 @@ void setup() {
   lpf.setCutoffFreqAndResonance(cutoff, resonance);
   for( int i=0; i<NUM_OSCS; i++) { 
      aOscs[i].setTable(SAW_ANALOGUE512_DATA);
-     portamentos[i].setTime(100);
+     portamentos[i].setTime(portamento_time);
   }
+  envelope.setADLevels(255, 255);
+  // 30sec sustain since ADSR doesn't "hold" a note apparently
+  envelope.setTimes(25, 200, 30000, 300 ); 
+
   startMozzi();
   
-  Serial.println("dronetest");
+  Serial.println("dronesynth");
 }
 
 // core0 loop() belongs to Mozzi
@@ -77,9 +84,8 @@ void loop() {
 
 //
 void setOscs() {  
-  bool noteMode = false;
   for(int i=0; i<NUM_OSCS; i++) {
-    float note = root_note + 24 * ((float)osc_vals[i] / MAX_TUNE); 
+    float note = rootNote + 24 * ((float)oscVals[i] / MAX_TUNE); 
     Q15n16 r = Q7n8_to_Q15n16(100-rand(200)); // random for oscillator "drift".
     if( scatterAmount ) {
       r = r * (scatterAmount*2);
@@ -90,7 +96,6 @@ void setOscs() {
 
 // Mozzi function, called every CONTROL_RATE
 void updateControl() {
-  
   // filter range (0-255) corresponds with 0-8191Hz
   // oscillator & mods run from -128 to 127
   cutoff = filterAmount; // copy from UI
@@ -101,17 +106,24 @@ void updateControl() {
     Q16n16 f = portamentos[i].next();
     aOscs[i].setFreq_Q16n16(f);
   }
- 
+  
+  envelope.update();
+  
+  if( droneMode ) { 
+    envelope.noteOn(); // always triggered if non-MIDI mode
+  } 
+  
   setOscs();
 }
 
 // mozzi function, called every AUDIO_RATE to output sample
 AudioOutput_t updateAudio() {
-  int16_t asig = (long) 0;
+  long asig = (long) 0;
   for( int i=0; i<NUM_OSCS; i++) {
     int8_t a = aOscs[i].next();
     asig += a;
   }
-  asig = lpf.next(asig) * volumeAmount;  // volume 0-15 adds 4-bits 
-  return MonoOutput::fromAlmostNBit(15, asig); // should be 12? 
+  asig = lpf.next(asig) * volumeAmount;  // volume 0-15 adds 4 bits 
+  asig *= envelope.next(); // adds 8 bits
+  return MonoOutput::fromAlmostNBit(24, asig); // should be 8 + 2 + 4 + 8 = 24? 
 }

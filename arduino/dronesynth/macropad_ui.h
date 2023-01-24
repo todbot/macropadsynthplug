@@ -15,6 +15,7 @@
 #include <Adafruit_TinyUSB.h>
 #include <MIDI.h>
 
+
 const int NUM_KEYS = 12;
 const int DW = 128;
 const int DH = 64;
@@ -39,17 +40,17 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDIserial);   // Serial MIDI
 
 
 int encoder_pos = 0; // our encoder position state
-bool keys_pressed[NUM_KEYS];
-int edit_mode = 0; // 0 = gain, 1 = harmonics
 uint32_t last_encoder_millis = 0;
+bool keys_pressed[NUM_KEYS];
+byte editMode = 0; // 0 = edit freqs, 1 = edit scattermode, 2 = edit volume
 
 // values used by Mozzi on core0
-byte root_note = 48; // MIDI base note
-int osc_vals[ NUM_KEYS ];
+byte rootNote = 48; // MIDI base note
+int oscVals[ NUM_KEYS ];
 byte volumeAmount = 15; // 0-15
-byte scatterAmount = 0; // 0-50?
+byte scatterAmount = 0; // 0-50
 byte filterAmount = 70;
-byte editMode = 0; // 0 = edit freqs, 1 = edit scattermode, 2 = edit volume
+bool droneMode = true;
 //
 
 int notenum_to_oct(int notenum) {
@@ -90,7 +91,7 @@ void setup1() {
   }
 
   for( int i=0; i<NUM_KEYS; i++ ) { 
-    osc_vals[i] = 50 + i;
+    oscVals[i] = -24 + 12*rand(5);
   }
   
 }
@@ -101,13 +102,18 @@ void midiReceive() {
   byte data1 = MIDIusb.getData1();
   byte data2 = MIDIusb.getData2();
   byte chan  = MIDIusb.getChannel();
-  Serial.printf("MIDIusb: c:%d t:%2x data:%2x %2x\n", chan, mtype, data1,data2);
+  //Serial.printf("MIDIusb: c:%d t:%2x data:%2x %2x\n", chan, mtype, data1,data2);
   if( mtype == midi::NoteOn ) {
-    root_note = data1;
-    //envelope.noteOn();
+    Serial.printf("noteON :%x\n",data1);
+    rootNote = data1;
+    portamento_time = 50;
+    envelope.noteOn();
+    droneMode = false;  // midi notes take us out of drone mode, turning root note knob puts us back
   }
   else if( mtype == midi::NoteOff ) {
-    //envelope.noteOff();
+    Serial.printf("noteOFF:%x\n",data1);
+    envelope.noteOff();
+    portamento_time = 400;
   }
 }
 
@@ -126,9 +132,9 @@ void loop1() {
     if(keys[i].rose()) { // release
       keys_pressed[i] = false;
       leds.setPixelColor(i, 0x111111);
-      Serial.print("osc_vals: ");
+      Serial.print("oscVals: ");
       for(int i=0; i<NUM_KEYS; i++ ) { 
-        Serial.print(osc_vals[i]); Serial.print(" ");
+        Serial.print(oscVals[i]); Serial.print(" ");
       }
       Serial.println();
     }    
@@ -150,18 +156,19 @@ void loop1() {
       bool keyed = false;
       for( int i=0; i<NUM_KEYS; i++ ) { 
         if( keys_pressed[i] ) { 
-          osc_vals[i] = constrain(osc_vals[i] + dv, -MAX_TUNE,MAX_TUNE);
+          oscVals[i] = constrain(oscVals[i] + dv, -MAX_TUNE,MAX_TUNE);
           keyed = true;
         }
       }
       // if no keys pressed, just turning knob lets us change rootnote
       if(!keyed) { 
         if( editMode == 0 ) { 
-          root_note = constrain( root_note + dv, 0,120);
+          rootNote = constrain( rootNote + dv, 0,120);
+          droneMode = true;
         } else if( editMode == 1 ) { 
           scatterAmount = constrain( scatterAmount + dv, 0,50);
         } else if( editMode == 2 ) {
-          filterAmount = constrain( filterAmount + dv, 0,127);
+          filterAmount = constrain( filterAmount + dv, 0,190);
         } else if( editMode == 3 ) {
           volumeAmount = constrain( volumeAmount + dv, 0,15);
         }        
@@ -175,14 +182,13 @@ void loop1() {
     bool keyed = false;
     for( int i=0; i<NUM_KEYS; i++ ) { 
       if( keys_pressed[i] ) {
-        osc_vals[i] = osc_vals[i]==0 ? random(-MAX_TUNE,MAX_TUNE) : 0;
+        oscVals[i] = oscVals[i]==0 ? random(-MAX_TUNE,MAX_TUNE) : 0;
         keyed = true;
       }
     }
     if(!keyed) {
-      //scatterMode = !scatterMode;
       editMode = (editMode + 1) % 4; // 4 = number of modes
-      Serial.printf("editMode:%d\n",editMode);
+      Serial.printf("editMode:%d drone:%d\n",editMode, droneMode);
     }
   }
   
@@ -206,37 +212,39 @@ void loop1() {
   display.setCursor(4,50);
   display.printf("volume:%2d", volumeAmount);
   display.setCursor(4,60);
-  display.printf("root: %s%d", notenum_to_notestr(root_note), notenum_to_oct(root_note));
+  display.printf("root: %s%d", notenum_to_notestr(rootNote), notenum_to_oct(rootNote));
 
   if( editMode == 0 ) { 
-    display.drawRect(0,52, 65,11, SH110X_WHITE);
+    display.drawRect(0,52, 65,11, SH110X_WHITE);  // root note
   }
   else if( editMode == 1 ) { 
-    display.drawRect(0,22, 65,11, SH110X_WHITE); // scatter
+    display.drawRect(0,22, 65,11, SH110X_WHITE);  // scatter
   }
   else if( editMode == 2 ) { 
-    display.drawRect(0,32, 65,11, SH110X_WHITE); // filter
+    display.drawRect(0,32, 65,11, SH110X_WHITE);  // filter
   }
   else if( editMode == 3 ) { 
-    display.drawRect(0,42, 65,11, SH110X_WHITE); // volume
+    display.drawRect(0,42, 65,11, SH110X_WHITE);  // volume
   }
 
-  display.setCursor(100,63);  display.print("oscs");
-  display.drawRect(65,0, 62,58, SH110X_WHITE); // osc grid
+  display.setCursor(104,63);  display.print("oscs");
+  display.drawRect(65,0, 62,58, SH110X_WHITE); // osc grid outline
+  // draw which oscs are selected
   for( int i=0; i<NUM_KEYS; i++ ) {
     if( keys[i].read() == LOW ) { // == pressed (active low)
       display.drawRect(66 + 20*(i%3), 0 + 15*(i/3), 20,12, SH110X_WHITE);
     }
   }
+  // draw osc grid values
   for( int i=0; i<NUM_KEYS/4; i++ ) {
     display.setCursor(60 + (i*20), 10);
-    display.printf("%4d", osc_vals[i + 0*(NUM_KEYS/4)]);
+    display.printf("%4d", oscVals[i + 0*(NUM_KEYS/4)]);
     display.setCursor(60 + (i*20), 25);
-    display.printf("%4d", osc_vals[i + 1*(NUM_KEYS/4)]);
+    display.printf("%4d", oscVals[i + 1*(NUM_KEYS/4)]);
     display.setCursor(60 + (i*20), 40);
-    display.printf("%4d", osc_vals[i + 2*(NUM_KEYS/4)]);
+    display.printf("%4d", oscVals[i + 2*(NUM_KEYS/4)]);
     display.setCursor(60 + (i*20), 55);
-    display.printf("%4d", osc_vals[i + 3*(NUM_KEYS/4)]);
+    display.printf("%4d", oscVals[i + 3*(NUM_KEYS/4)]);
   }
    
   display.display();
