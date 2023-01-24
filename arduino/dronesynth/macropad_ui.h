@@ -12,6 +12,8 @@
 #define myfont FreeMono9pt7b
 #define myfont2 Font5x7FixedMono 
 // see: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
+#include <Adafruit_TinyUSB.h>
+#include <MIDI.h>
 
 const int NUM_KEYS = 12;
 const int DW = 128;
@@ -29,6 +31,12 @@ Adafruit_SH1106G display = Adafruit_SH1106G(DW, DH, &SPI1, OLED_DC, OLED_RST, OL
 
 RotaryEncoder encoder(PIN_ROTB, PIN_ROTA, RotaryEncoder::LatchMode::FOUR3);
 void checkEncoderPosition() {  encoder.tick(); } // just call tick() to check the state.
+
+const int midi_rx_pin = PIN_WIRE0_SCL; // GPIO21 on StemmaQt connector
+Adafruit_USBD_MIDI usb_midi;  // USB MIDI object
+MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDIusb); // USB MIDI
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDIserial);   // Serial MIDI
+
 
 int encoder_pos = 0; // our encoder position state
 bool keys_pressed[NUM_KEYS];
@@ -54,11 +62,10 @@ const char* notenum_to_notestr(int notenum) {
   return note_strs[ notenum % 12 ];
 }
 
-// core1 runs UI
+
+// core1 runs UI and MIDI
 void setup1() {
-  Serial.begin(115200);
-  delay(1000); // 
-  
+  delay(100);
   // OLED
   display.begin(0, true);
   display.clearDisplay();
@@ -86,10 +93,28 @@ void setup1() {
     osc_vals[i] = 50 + i;
   }
   
-  Serial.println("dronetest");
 }
 
-void loop1() { 
+void midiReceive() {
+  if ( !MIDIusb.read() ) { return; }
+  byte mtype = MIDIusb.getType();
+  byte data1 = MIDIusb.getData1();
+  byte data2 = MIDIusb.getData2();
+  byte chan  = MIDIusb.getChannel();
+  Serial.printf("MIDIusb: c:%d t:%2x data:%2x %2x\n", chan, mtype, data1,data2);
+  if( mtype == midi::NoteOn ) {
+    root_note = data1;
+    //envelope.noteOn();
+  }
+  else if( mtype == midi::NoteOff ) {
+    //envelope.noteOff();
+  }
+}
+
+void loop1() {
+  // MIDI
+  midiReceive();
+   
   // KEYS
   for (uint8_t i=0; i< NUM_KEYS; i++) {
     keys[i].update();
@@ -177,7 +202,7 @@ void loop1() {
   display.setCursor(4,30);
   display.printf("scatter:%2d", scatterAmount);
   display.setCursor(4,40);
-  display.printf("filt:%2d", filterAmount);
+  display.printf("filter:%2d", filterAmount);
   display.setCursor(4,50);
   display.printf("volume:%2d", volumeAmount);
   display.setCursor(4,60);
@@ -200,7 +225,7 @@ void loop1() {
   display.drawRect(65,0, 62,58, SH110X_WHITE); // osc grid
   for( int i=0; i<NUM_KEYS; i++ ) {
     if( keys[i].read() == LOW ) { // == pressed (active low)
-      display.drawRect(65 + 20*(i%3), 0 + 15*(i/3), 20,12, SH110X_WHITE);
+      display.drawRect(66 + 20*(i%3), 0 + 15*(i/3), 20,12, SH110X_WHITE);
     }
   }
   for( int i=0; i<NUM_KEYS/4; i++ ) {
