@@ -160,7 +160,7 @@ void loop1() {
           keyed = true;
         }
       }
-      // if no keys pressed, just turning knob lets us change rootnote
+      // if no keys pressed, just turning knob lets us change rootnote et all
       if(!keyed) { 
         if( editMode == 0 ) { 
           rootNote = constrain( rootNote + dv, 0,120);

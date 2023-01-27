@@ -125,5 +125,5 @@ AudioOutput_t updateAudio() {
   }
   asig = lpf.next(asig) * volumeAmount;  // volume 0-15 adds 4 bits 
   asig *= envelope.next(); // adds 8 bits
-  return MonoOutput::fromAlmostNBit(24, asig); // should be 8 + 2 + 4 + 8 = 24? 
+  return MonoOutput::fromAlmostNBit(23, asig); // should be 8 + 2 + 4 + 8 = 24? 
 }

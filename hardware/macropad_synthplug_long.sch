@@ -11487,6 +11487,8 @@ StemmaQT pins are connected to:
 <text x="-4.826" y="83.82" size="1.778" layer="97" rot="R180">RING1</text>
 <text x="-4.826" y="87.376" size="1.778" layer="97" rot="R180">GND</text>
 <text x="-4.826" y="81.026" size="1.778" layer="97" rot="R180">TIP</text>
+<text x="71.12" y="30.48" size="1.778" layer="97">Works with cell phone earphones &amp;
+stereo cables. Does not work w/ mono cables</text>
 </plain>
 <instances>
 <instance part="CONN1" gate="G$1" x="-43.18" y="53.34" smashed="yes" rot="MR0">
