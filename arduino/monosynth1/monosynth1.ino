@@ -81,12 +81,14 @@ LowPassFilter lpf;
 //
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
+
+  // USB and MIDI setup
+  Serial1.setRX(midi_rx_pin);
+  MIDIserial.begin(MIDI_CHANNEL_OMNI);
+  MIDIserial.turnThruOff(); // turn off echo
   
-  //  Serial1.setRX(midi_rx_pin);
   MIDIusb.begin(MIDI_CHANNEL_OMNI);
-  //  MIDIserial.begin(MIDI_CHANNEL_OMNI);
   MIDIusb.turnThruOff();    // turn off echo
-  //  MIDIserial.turnThruOff(); // turn off echo
   // USB and MIDI end
   
   Serial.begin(115200);
@@ -99,6 +101,54 @@ void setup() {
 //
 void loop() {
   audioHook();
+}
+
+void handleMIDI() {
+  handleMIDIusb();
+  handleMIDIserial();
+}
+
+//
+void handleMIDIusb() {
+  while( MIDIusb.read() ) {  // use while() to read all pending MIDI, shouldn't hang
+    switch(MIDIusb.getType()) {
+      case midi::ProgramChange:
+        handleProgramChange(MIDIusb.getData1());
+        break;
+      case midi::ControlChange:
+        handleControlChange(0, MIDIusb.getData1(), MIDIusb.getData2());
+        break;
+      case midi::NoteOn:
+        handleNoteOn( 0, MIDIusb.getData1(),MIDIusb.getData2());
+        break;
+      case midi::NoteOff:
+        handleNoteOff( 0, MIDIusb.getData1(),MIDIusb.getData2());
+        break;
+      default:
+        break;
+    }
+  }
+}
+// surely there's a way to have this generalized
+void handleMIDIserial() {
+  while( MIDIserial.read() ) {  // use while() to read all pending MIDI, shouldn't hang
+    switch(MIDIserial.getType()) {
+      case midi::ProgramChange:
+        handleProgramChange(MIDIserial.getData1());
+        break;
+      case midi::ControlChange:
+        handleControlChange(0, MIDIserial.getData1(), MIDIserial.getData2());
+        break;
+      case midi::NoteOn:
+        handleNoteOn( 0, MIDIserial.getData1(),MIDIserial.getData2());
+        break;
+      case midi::NoteOff:
+        handleNoteOff( 0, MIDIserial.getData1(),MIDIserial.getData2());
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 //
@@ -175,28 +225,6 @@ void handleProgramChange(byte m) {
     mod_vals[FilterCutoff] = 65;
     //kFilterMod.setFreq(0.25f);    // slower
     //retrig_lfo = false;
-  }
-}
-
-//
-void handleMIDI() {
-  while( MIDIusb.read() ) {  // use while() to read all pending MIDI, shouldn't hang
-    switch(MIDIusb.getType()) {
-      case midi::ProgramChange:
-        handleProgramChange(MIDIusb.getData1());
-        break;
-      case midi::ControlChange:
-        handleControlChange(0, MIDIusb.getData1(), MIDIusb.getData2());
-        break;
-      case midi::NoteOn:
-        handleNoteOn( 0, MIDIusb.getData1(),MIDIusb.getData2());
-        break;
-      case midi::NoteOff:
-        handleNoteOff( 0, MIDIusb.getData1(),MIDIusb.getData2());
-        break;
-      default:
-        break;
-    }
   }
 }
 
