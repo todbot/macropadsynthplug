@@ -74,7 +74,7 @@ So it probably won't work on other RP2040-based boards too.  For instance:
 
 ## Are these for sale?
 
-Not yet!  But perhaps soon!
+Yes! [Get one now at Tindie!]https://www.tindie.com/products/todbot/macropadsynthplug-turn-rp2040-into-a-synth/)
 
 ## Action shots
 
