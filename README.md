@@ -2,6 +2,8 @@
 
 abuse MacroPad RP2040's StemmaQT port by turning it into Audio Out + MIDI In
 
+[Get one now at Tindie!](https://www.tindie.com/products/todbot/macropadsynthplug-turn-rp2040-into-a-synth/)
+
 Demo video on Youtube:
 [![CircuitPython drum machine demo](https://img.youtube.com/vi/jMKC_18M17U/maxresdefault.jpg)](https://www.youtube.com/watch?v=jMKC_18M17U)
 
@@ -20,7 +22,13 @@ and gives you [TRS-A MIDI In](https://minimidi.world/) and Audio line out.
 
 The MacroPad RP2040 can now be a stand-alone MIDI synth!
 
-Examples in this repo show how to do this in both CircuitPython and Arduino.
+Examples provided for both [CircuitPython](https://circuitpython.org/) and [Arduino](https://arduino-pico.readthedocs.io/en/latest/):
+
+
+* __drum_machine__ - CircuitPython-based drum sequencer ([demo1](https://youtu.be/jMKC_18M17U),[demo2](https://youtu.be/bJwyUjxc6VM) )
+* __dronesynth__ - Arduino Mozzi 12-oscillator drone synth ([demo](https://youtu.be/kLwP-vyvtLM))
+* __remixer__ - CircuitPython-based song remixer ([source](https://github.com/todbot/macropadsynthplug/tree/main/circuitpython/remixer))
+* __monosynth1__ - Arduino Mozzi 2-oscillator bass monosynth w/ resonant low-pass filter ([source](https://github.com/todbot/macropadsynthplug/tree/main/arduino/monosynth1))
 
 
 ## How?
@@ -78,4 +86,7 @@ Yes! [Get one now at Tindie!](https://www.tindie.com/products/todbot/macropadsyn
 
 ## Action shots
 
-<img width=700 src="./docs/img1.jpg"><img width=700 src="./docs/img2.jpg">
+<img width=700 src="./docs/img_production1.jpg">
+
+<img width=700 src="./docs/img1.jpg">
+<img width=700 src="./docs/img2.jpg">
