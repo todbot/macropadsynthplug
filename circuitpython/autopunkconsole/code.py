@@ -60,8 +60,8 @@ while True:
     t += 0.003  # move a little bit in noise space
 
     # map noise to appropriate values for punk_console
-    # Oscillator Frequency, 3 - 3000     #   oscillator frequency range: 3Hz to 3kHz
-    # One-Shot Pulse Width, 0.5 - 5.0   #   one-shot pulse width range: 0.5ms to 5ms
+    # Oscillator Frequency, 3 - 3000 Hz
+    # One-Shot Pulse Width, 0.5 - 5.0 ms
     punk_console.frequency = map_range( n1, -1,1, 3, 2000)
     punk_console.pulse_width_ms  = map_range( n2, -1,1, 0.5, 5.0)
 
