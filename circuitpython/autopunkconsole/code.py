@@ -51,10 +51,7 @@ mainscreen.append( freqlabel := Label(font, text="0000", x=30, y=50) )
 mainscreen.append( Label(font, text="pw:",               x=70, y=50) )
 mainscreen.append( pwlabel := Label(font, text="00.0",   x=90, y=50) )
 
-# our two inputs, that are being varied by the simplex/perlin noise function
-f_in = 400  # Oscillator Frequency, 3 - 3000     #   oscillator frequency range: 3Hz to 3kHz
-pw_in = 2.0  # One-Shot Pulse Width, 0.5 - 5.0   #   one-shot pulse width range: 0.5ms to 5ms
-t=0  # our position in noise space
+t = 0  # our position in noise space
 last_display_update = time.monotonic() # only update the display occasionally, since it slows us down
 
 while True:
@@ -63,6 +60,8 @@ while True:
     t += 0.003  # move a little bit in noise space
 
     # map noise to appropriate values for punk_console
+    # Oscillator Frequency, 3 - 3000     #   oscillator frequency range: 3Hz to 3kHz
+    # One-Shot Pulse Width, 0.5 - 5.0   #   one-shot pulse width range: 0.5ms to 5ms
     punk_console.frequency = map_range( n1, -1,1, 3, 2000)
     punk_console.pulse_width_ms  = map_range( n2, -1,1, 0.5, 5.0)
 
