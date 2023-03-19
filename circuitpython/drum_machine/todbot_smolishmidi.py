@@ -111,7 +111,7 @@ class MidiIn:
 
         print("smol result:",result)
         message = Message()
-        #data_bytes = bytearray(2)
+        data_bytes = bytearray(2)
 
         # Is this a status byte?
         status_byte = self._read_buf[0]
