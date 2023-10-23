@@ -27,17 +27,16 @@ const int key_pins[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 Bounce keys[NUM_KEYS];
 Bounce encoder_switch;
 
+const int midi_rx_pin = PIN_WIRE0_SCL; // GPIO21 on StemmaQt connector
+Adafruit_USBD_MIDI usb_midi;  // USB MIDI object
+MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDIusb); // USB MIDI
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDIserial);   // Serial MIDI
+
 Adafruit_NeoPixel leds = Adafruit_NeoPixel(NUM_KEYS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 Adafruit_SH1106G display = Adafruit_SH1106G(DW, DH, &SPI1, OLED_DC, OLED_RST, OLED_CS);
 
 RotaryEncoder encoder(PIN_ROTB, PIN_ROTA, RotaryEncoder::LatchMode::FOUR3);
 void checkEncoderPosition() {  encoder.tick(); } // just call tick() to check the state.
-
-const int midi_rx_pin = PIN_WIRE0_SCL; // GPIO21 on StemmaQt connector
-Adafruit_USBD_MIDI usb_midi;  // USB MIDI object
-MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDIusb); // USB MIDI
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDIserial);   // Serial MIDI
-
 
 int encoder_pos = 0; // our encoder position state
 uint32_t last_encoder_millis = 0;
@@ -96,13 +95,7 @@ void setup1() {
   
 }
 
-void midiReceive() {
-  if ( !MIDIusb.read() ) { return; }
-  byte mtype = MIDIusb.getType();
-  byte data1 = MIDIusb.getData1();
-  byte data2 = MIDIusb.getData2();
-  byte chan  = MIDIusb.getChannel();
-  //Serial.printf("MIDIusb: c:%d t:%2x data:%2x %2x\n", chan, mtype, data1,data2);
+void midiHandleMsg( byte mtype, byte data1, byte data2, byte chan) {  
   if( mtype == midi::NoteOn ) {
     Serial.printf("noteON :%x\n",data1);
     rootNote = data1;
@@ -117,9 +110,34 @@ void midiReceive() {
   }
 }
 
+void midiUsbReceive() {
+  if ( !MIDIusb.read() ) { return; }
+
+  byte mtype = MIDIusb.getType();
+  byte data1 = MIDIusb.getData1();
+  byte data2 = MIDIusb.getData2();
+  byte chan  = MIDIusb.getChannel();
+
+  //Serial.printf("MIDIusb c:%d t:%2x data:%2x %2x\n", chan, mtype, data1,data2);
+  midiHandleMsg( mtype, data1, data2, chan);
+}
+
+void midiSerialReceive() {
+  if ( !MIDIserial.read() ) { return; }
+
+  byte mtype = MIDIserial.getType();
+  byte data1 = MIDIserial.getData1();
+  byte data2 = MIDIserial.getData2();
+  byte chan  = MIDIserial.getChannel();
+
+  Serial.printf("MIDIserial: c:%d t:%2x data:%2x %2x\n", chan, mtype, data1,data2);
+  midiHandleMsg( mtype, data1, data2, chan);
+}
+
 void loop1() {
   // MIDI
-  midiReceive();
+  midiUsbReceive();
+  midiSerialReceive();
    
   // KEYS
   for (uint8_t i=0; i< NUM_KEYS; i++) {

@@ -7,11 +7,14 @@
  * Libraries needed (all available via Library Manager):
  * - Bounce2 -- https://github.com/thomasfredericks/Bounce2
  * - RotaryEncoder -- http://www.mathertel.de/Arduino/RotaryEncoderLibrary.aspx
- * - Adafruit_SSD1306 -- https://github.com/adafruit/Adafruit_SSD1306
+ * - Adafruit_SSDSH110X -- https://github.com/adafruit/Adafruit_SH110X
  * - Adafruit_TinyUSB -- https://github.com/adafruit/Adafruit_TinyUSB_Arduino
  * - MIDI -- https://github.com/FortySevenEffects/arduino_midi_library
  *
-* Must edit Mozzi library!
+ * Libraries installed by hand:
+ * - Mozzi - https://github.com/sensorium/Mozzi
+ *
+ * Must edit Mozzi library!
  * - in "Mozzi/AudioConfigRP2040.h"
  *   - change to "AUDIO_CHANNEL_1_PIN 20" for MacroPadSynthPlug
  *   - or change to "AUDIO_CHANNEL_1_PIN 16" for built-in speaker  
@@ -19,7 +22,7 @@
  * 
  * IDE change:
  * - Select "Tools / USB Stack: Adafruit TinyUSB" * 
- * - Select "Tools / Flash Size: 2MB (Sketch: 1MB / FS: 1MB)
+ * - Select "Tools / Flash Size: 2MB (Sketch: 1MB / FS: 7MB)
  */
 
 
@@ -45,8 +48,8 @@ uint8_t resonance = 140; // range 0-255, 255 is most resonant
 uint8_t cutoff = 70;
 int portamento_time = 400;
 
-#include "macropad_ui.h"
 
+#include "macropad_ui.h"
 
 // core0 setup
 void setup() {
@@ -54,11 +57,11 @@ void setup() {
   USBDevice.setManufacturerDescriptor("todbot");
   USBDevice.setProductDescriptor     ("DroneSynth");
 
-  //  Serial1.setRX(midi_rx_pin);
+  Serial2.setRX(midi_rx_pin); // midi_rx_pin defined in "macropad_ui.h"
   MIDIusb.begin(MIDI_CHANNEL_OMNI);
-  //  MIDIserial.begin(MIDI_CHANNEL_OMNI);
+  MIDIserial.begin(MIDI_CHANNEL_OMNI);
   MIDIusb.turnThruOff();    // turn off echo
-  //  MIDIserial.turnThruOff(); // turn off echo
+  MIDIserial.turnThruOff(); // turn off echo
   // USB and MIDI end
     
   Serial.begin(115200);
