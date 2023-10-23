@@ -4,22 +4,25 @@
  *
  * Responds to USB MIDI and (soon) Serial (DIN) MIDI In
  *
+ * Libraries installed by hand:
+ * - Mozzi - https://github.com/sensorium/Mozzi
+
  * Must edit Mozzi library!
  * - in "Mozzi/AudioConfigRP2040.h"
  *   - change to "AUDIO_CHANNEL_1_PIN 20"
  *   - or change to "AUDIO_CHANNEL_1_PIN 16" for built-in speaker (
  *      (must also set pin 14 HIGH to enable built-in speaker)
- * 
+ *
  * IDE change:
- * - Select "Tools / USB Stack: Adafruit TinyUSB" * 
- * - Select "Tools / Flash Size: 2MB (Sketch: 1MB / FS: 1MB)
- *  
+ * - Select "Tools / USB Stack: Adafruit TinyUSB" *
+ * - Select "Tools / Flash Size: 2MB (Sketch: 1MB / FS: 7MB)
+ *
  *  @todbot 20 Jan 2023
  **/
 
 // Mozzi's controller update rate, seems to have issues at 1024
 // If slower than 512 can't get all MIDI from Live
-#define CONTROL_RATE 512 
+#define CONTROL_RATE 512
 // set DEBUG_MIDI 1 to show CCs received in Serial Monitor
 #define DEBUG_MIDI 0
 
@@ -83,16 +86,17 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // USB and MIDI setup
-  Serial1.setRX(midi_rx_pin);
+  Serial2.setRX(midi_rx_pin); 
+  // Serial2 is UART1: https://arduino-pico.readthedocs.io/en/latest/serial.html#serial-ports-usb-and-uart
   MIDIserial.begin(MIDI_CHANNEL_OMNI);
   MIDIserial.turnThruOff(); // turn off echo
-  
+
   MIDIusb.begin(MIDI_CHANNEL_OMNI);
   MIDIusb.turnThruOff();    // turn off echo
   // USB and MIDI end
-  
+
   Serial.begin(115200);
-  
+
   startMozzi(CONTROL_RATE);
 
   handleProgramChange(0); // set our initial patch
@@ -151,30 +155,35 @@ void handleMIDIserial() {
   }
 }
 
+int notes_on;
 //
 void handleNoteOn(byte channel, byte note, byte velocity) {
-//  Serial.println("midi_test handleNoteOn!");
+  //  Serial.println("monosynth1 handleNoteOn!");
   digitalWrite(LED_BUILTIN,HIGH);
   portamento.start(note);
   envelope.noteOn();
+  notes_on += 1;
 }
 
 //
 void handleNoteOff(byte channel, byte note, byte velocity) {
-  digitalWrite(LED_BUILTIN,LOW);
-  envelope.noteOff();
+  notes_on -= 1;
+  if( notes_on == 0 ) { 
+    digitalWrite(LED_BUILTIN,LOW);
+    envelope.noteOff();
+  }
 }
 
 //
 void handleControlChange(byte channel, byte cc_num, byte cc_val) {
-  #if DEBUG_MIDI 
+  #if DEBUG_MIDI
   Serial.printf("CC %d %d\n", cc_num, cc_val);
   #endif
-  for( int i=0; i<CC_COUNT; i++) { 
+  for( int i=0; i<CC_COUNT; i++) {
     if( midi_ccs[i] == cc_num ) { // we got one
       mod_vals[i] = cc_val;
       // special cases, not set every updateControl()
-      if( i == PortamentoTime ) { 
+      if( i == PortamentoTime ) {
         portamento.setTime( mod_vals[PortamentoTime] * 2);
       }
       else if( i == EnvReleaseTime ) {
@@ -188,10 +197,10 @@ void handleControlChange(byte channel, byte cc_num, byte cc_val) {
 void handleProgramChange(byte m) {
   Serial.print("program change:"); Serial.println((byte)m);
   sound_mode = m;
-  if( sound_mode == 0 ) {    
+  if( sound_mode == 0 ) {
     aOsc1.setTable(SAW_ANALOGUE512_DATA);
     aOsc2.setTable(SAW_ANALOGUE512_DATA);
-    
+
     mod_vals[Modulation] = 0;   // FIXME: modulation unused currently
     mod_vals[Resonance] = 93;
     mod_vals[FilterCutoff] = 60;
@@ -199,7 +208,7 @@ void handleProgramChange(byte m) {
     mod_vals[EnvReleaseTime] = 100; // in 10x milliseconds (100 = 1000 msecs)
 
     lpf.setCutoffFreqAndResonance(mod_vals[FilterCutoff], mod_vals[Resonance]*2);
-    
+
     kFilterMod.setFreq(4.0f);  // fast
     envelope.setADLevels(255, 255);
     envelope.setTimes(50, 200, 20000, mod_vals[EnvReleaseTime] );
@@ -208,12 +217,12 @@ void handleProgramChange(byte m) {
   else if ( sound_mode == 1 ) {
     aOsc1.setTable(SQUARE_ANALOGUE512_DATA);
     aOsc2.setTable(SQUARE_ANALOGUE512_DATA);
-    
+
     mod_vals[Resonance] = 50;
     mod_vals[EnvReleaseTime] = 15;
-    
+
     lpf.setCutoffFreqAndResonance(mod_vals[FilterCutoff], mod_vals[Resonance]*2);
-    
+
     kFilterMod.setFreq(0.5f);     // slow
     envelope.setADLevels(255, 255);
     envelope.setTimes(50, 100, 20000, (uint16_t)mod_vals[EnvReleaseTime]*10 );
@@ -231,18 +240,18 @@ void handleProgramChange(byte m) {
 // mozzi function, called at CONTROL_RATE times per second
 void updateControl() {
   handleMIDI();
-  
+
   // map the lpf modulation into the filter range (0-255), corresponds with 0-8191Hz, kFilterMod runs -128-127
   //uint8_t cutoff_freq = cutoff + (mod_amount * (kFilterMod.next()/2));
-//  uint16_t fm = ((kFilterMod.next() * mod_vals[Modulation]) / 128) + 127 ; 
+//  uint16_t fm = ((kFilterMod.next() * mod_vals[Modulation]) / 128) + 127 ;
 //  uint8_t cutoff_freq = constrain(mod_vals[FilterCutoff] + fm, 0,255 );
-  
+
 //  lpf.setCutoffFreqAndResonance(cutoff_freq, mod_vals[Resonance]*2);
 
   lpf.setCutoffFreqAndResonance(mod_vals[FilterCutoff], mod_vals[Resonance]*2);  // don't *2 filter since we want 0-4096Hz
 
   envelope.update();
-  
+
   Q16n16 pf = portamento.next();  // Q16n16 is a fixed-point fraction in 32-bits (16bits . 16bits)
   aOsc1.setFreq_Q16n16(pf);
   aOsc2.setFreq_Q16n16(pf*1.02);
