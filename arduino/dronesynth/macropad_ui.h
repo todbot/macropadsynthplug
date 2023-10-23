@@ -95,6 +95,8 @@ void setup1() {
   
 }
 
+int notes_on = 0;
+
 void midiHandleMsg( byte mtype, byte data1, byte data2, byte chan) {  
   if( mtype == midi::NoteOn ) {
     Serial.printf("noteON :%x\n",data1);
@@ -102,10 +104,14 @@ void midiHandleMsg( byte mtype, byte data1, byte data2, byte chan) {
     portamento_time = 50;
     envelope.noteOn();
     droneMode = false;  // midi notes take us out of drone mode, turning root note knob puts us back
+    notes_on += 1;
   }
   else if( mtype == midi::NoteOff ) {
     Serial.printf("noteOFF:%x\n",data1);
-    envelope.noteOff();
+    notes_on -= 1;
+    if( notes_on == 0) {
+      envelope.noteOff(); // only trigger note off if all notes are off
+    }
     portamento_time = 400;
   }
 }
