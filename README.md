@@ -38,7 +38,7 @@ on the MacroPad RP2040 is amazingly configurable.
 
 Normally a port like the StemmaQT I2C port would only be usable as an I2C bus, or maybe as GPIO pins.
 
-But with the RP2040, those two StemmaQT pins, can be:
+But with the MacroPad RP2040, the two StemmaQT pins are:
 
 - SDA - GP20 - UART1 TX - PWM2B
 - SCL - GP21 - UART1 RX - PWM2A
@@ -50,7 +50,13 @@ This means we could use the StemmaQT port for all sorts of musical things, like:
 - MIDI In / Audio Out  (Hey this is what MacroPadSynthPlug does)
 
 To get audio out, all we need is a small PWM filtering circuit.
-To get MIDI in, a small optoisolator circuit is needed.  MacroPadSynthPlug is just this.
+To get MIDI in, a small optoisolator circuit is needed.
+
+MacroPadSynthPlug is just this.  It is wired like so:
+
+- StemmaQT SCL -- TRS-A MIDI input
+- StemmaQT SDA -- audio PWM out
+
 
 This is sort of an "abuse" of the StemmaQT port, as it's meant only for I2C devices.
 But it's safe, will not damage other StemmaQT devices,
