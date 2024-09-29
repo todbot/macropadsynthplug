@@ -3,6 +3,9 @@
 #
 # 1 Mar 2023 - @todbot / Tod Kurt
 #
+# `cedargrove_punkconsole` can be found at https://github.com/CedarGroveStudios/CircuitPython_PunkConsole
+# or installing with circup: `circup install cedargrove_punkconsole`
+#
 # DANGER: this makes really annoying noises
 #
 
