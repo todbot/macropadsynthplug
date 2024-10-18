@@ -1,8 +1,8 @@
 # MacroPadSynthPlug!
 
-abuse MacroPad RP2040's StemmaQT port by turning it into Audio Out + MIDI In
+Turn MacroPad RP2040's StemmaQT port into Audio Out + MIDI In
 
-[Get one now at Tindie!](https://www.tindie.com/products/todbot/macropadsynthplug-turn-rp2040-into-a-synth/)
+<a href="https://www.tindie.com/products/todbot/macropadsynthplug-turn-rp2040-into-a-synth/"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-smalls.png" alt="PicoTouch on Tindie" width="200" height="55"></a>
 
 Demo video on Youtube:
 [![CircuitPython drum machine demo](https://img.youtube.com/vi/jMKC_18M17U/maxresdefault.jpg)](https://www.youtube.com/watch?v=jMKC_18M17U)
