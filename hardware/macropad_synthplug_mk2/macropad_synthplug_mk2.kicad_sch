@@ -3604,6 +3604,16 @@
 	)
 	(wire
 		(pts
+			(xy 60.96 102.87) (xy 73.66 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2ca413ec-047f-4b83-a3bf-08904b2e9e44")
+	)
+	(wire
+		(pts
 			(xy 143.51 59.69) (xy 146.05 59.69)
 		)
 		(stroke
@@ -3731,16 +3741,6 @@
 			(type default)
 		)
 		(uuid "4e5a15c0-659f-496c-8b93-b6277adebbe9")
-	)
-	(wire
-		(pts
-			(xy 60.96 102.87) (xy 73.66 102.87)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4f0723ca-fdf9-4f39-ba18-2350189152dd")
 	)
 	(wire
 		(pts
@@ -4425,7 +4425,7 @@
 		(uuid "6793d1ef-905a-4a4d-aacf-9cae97485ee4")
 	)
 	(label "MIDI_IN"
-		(at 64.77 102.87 0)
+		(at 64.77 120.65 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4469,7 +4469,7 @@
 		(uuid "9d0cfc14-1ec8-4f7a-9eea-0ff9cd9e4437")
 	)
 	(label "PWM_AUDIO_OUT"
-		(at 63.5 120.65 0)
+		(at 64.77 102.87 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4905,7 +4905,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "0d4284d7-2e31-4cc7-927e-5875a7a3b351")
-		(property "Reference" "LED1"
+		(property "Reference" "D4"
 			(at 165.1 33.3375 0)
 			(effects
 				(font
@@ -4957,7 +4957,7 @@
 		(instances
 			(project ""
 				(path "/5e6a2468-e052-4e22-bfa1-3eaff724ccf3"
-					(reference "LED1")
+					(reference "D4")
 					(unit 1)
 				)
 			)
@@ -8836,7 +8836,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "cd94f200-4aa6-40a5-a142-ab36d715f5a3")
-		(property "Reference" "LED3"
+		(property "Reference" "D6"
 			(at 163.83 91.186 0)
 			(effects
 				(font
@@ -8888,7 +8888,7 @@
 		(instances
 			(project "macropad_synthplug_mk2"
 				(path "/5e6a2468-e052-4e22-bfa1-3eaff724ccf3"
-					(reference "LED3")
+					(reference "D6")
 					(unit 1)
 				)
 			)
@@ -9098,7 +9098,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "eea7ac3b-4647-4400-9f5c-9c32dcd672ba")
-		(property "Reference" "LED2"
+		(property "Reference" "D5"
 			(at 164.084 55.88 0)
 			(effects
 				(font
@@ -9150,7 +9150,7 @@
 		(instances
 			(project "macropad_synthplug_mk2"
 				(path "/5e6a2468-e052-4e22-bfa1-3eaff724ccf3"
-					(reference "LED2")
+					(reference "D5")
 					(unit 1)
 				)
 			)
