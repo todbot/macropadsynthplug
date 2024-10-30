@@ -469,9 +469,9 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "macropad_synthplug_mk2_wtracks.step",
       "svg": "",
-      "vrml": ""
+      "vrml": "macropad_synthplug_mk2.wrl"
     },
     "page_layout_descr_file": ""
   },
