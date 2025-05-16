@@ -76,7 +76,7 @@ This makes this list of boards this works with kinda small.
 
 * [Adafruit QTPy RP2040](https://learn.adafruit.com/adafruit-qt-py-2040) 
   * with a PIO-based UART libary like [`SerialPIO`](https://arduino-pico.readthedocs.io/en/latest/piouart.html) or [`adafruit_pio_uart`](https://github.com/adafruit/Adafruit_CircuitPython_PIO_UART)
-  * as an example, see [qtpy_mpsp_synth]()
+  * as an example, see [qtpy_mpsp_synth](./circuitpython/qtpy_mpsp_synth/code.py)
 
 * Raspberry Pi Pico or Pico 2 
   * with a [StemmaQT](https://www.adafruit.com/product/4209) / [Qwiic](https://www.sparkfun.com/flexible-qwiic-cable-breadboard-jumper-4-pin.html) breadboard jumper cable
