@@ -37,36 +37,54 @@ Examples provided for both [CircuitPython](https://circuitpython.org/) and [Ardu
 The [Raspberry Pi RP2040 chip](https://www.raspberrypi.com/documentation/microcontrollers/rp2040.html)
 on the MacroPad RP2040 is amazingly configurable.
 
-Normally a port like the StemmaQT I2C port would only be usable as an I2C bus, or maybe as GPIO pins.
+Normally a port like the StemmaQT I2C port would only be usable as an I2C bus. 
+With the MacroPad RP2040, the two StemmaQT pins have the possible functionality:
 
-But with the MacroPad RP2040, the two StemmaQT pins have the possible functionality:
+* MacroPad RP2040 StemmaQT SDA -- GP20 - UART1 TX - PWM2B
+* MacroPad RP2040 StemmaQT SCL -- GP21 - UART1 RX - PWM2A
 
-- SDA - GP20 - UART1 TX - PWM2B
-- SCL - GP21 - UART1 RX - PWM2A
+MacroPadSynthPlug is a simple combination of two circuits:
 
-This means we could use the StemmaQT port for all sorts of musical things, like:
+* For MIDI in: StemmaQT SCL has an optoisolator circuit and TRS MIDI In jack
 
-- MIDI In / MID Out!
-- Stereo PWM Audio Out!
-- MIDI In / Audio Out!  *(Hey this is what MacroPadSynthPlug does)*
-
-To get audio out, we need is a small PWM filtering circuit.
-To get MIDI in, a small optoisolator circuit is needed.
-
-MacroPadSynthPlug is those two circuits, wired like so:
-
-- StemmaQT SCL -- TRS-A MIDI input
-- StemmaQT SDA -- audio PWM out
-
+* For PWM Audio Out: StemmaQT SDA has a PWM filtering circuit and Audio Out jack
 
 This is an "abuse" of the StemmaQT port, as it's meant only for I2C devices.
 But it's safe, will not damage other StemmaQT devices,
-but it does mean you "lose" the StemmaQT port for it's normal use with I2C.
+but it does mean you "lose" the StemmaQT port for its normal use with I2C.
+
+
+## Does this work for other boards with StemmaQT?
+
+Short answer: Yes, with caveats
+
+* For audio out, any board that can do PWM on StemmaQT SDA can use the
+  Audio Out side of MacroPadSynthPlug
+
+
+* For MIDI In, any boards that can do UART In on StemmaQT SCL can do TRS MIDI input. 
+  A "software serial" for TRS MIDI In may work, and of course USB MIDI In will 
+  always work
+
+This makes this list of boards this works with kinda small. 
+
+### Tested boards:
+
+* [Adafruit MacroPad RP2040](https://learn.adafruit.com/adafruit-macropad-rp2040)
+
+* [Adadfruit KB2040 "Keeboar"](https://learn.adafruit.com/adafruit-kb2040)
+
+* [Adafruit QTPy RP2040](https://learn.adafruit.com/adafruit-qt-py-2040) 
+  * with a PIO-based UART libary like [`SerialPIO`](https://arduino-pico.readthedocs.io/en/latest/piouart.html) or [`adafruit_pio_uart`](https://github.com/adafruit/Adafruit_CircuitPython_PIO_UART)
+  * as an example, see [qtpy_mpsp_synth]()
+
+* Raspberry Pi Pico or Pico 2 
+  * with a [StemmaQT](https://www.adafruit.com/product/4209) / [Qwiic](https://www.sparkfun.com/flexible-qwiic-cable-breadboard-jumper-4-pin.html) breadboard jumper cable
 
 
 ## Why?
 
-Seems like fun?  I have built many RP2040-based little hardware synths, like:
+Seems like fun?  I have built many little hardware synths, like:
 
 - [PicoStepSeq](https://github.com/todbot/picostepseq)
 - [picotouchsynth](https://github.com/todbot/picotouchsynth)
@@ -74,27 +92,6 @@ Seems like fun?  I have built many RP2040-based little hardware synths, like:
 - [seeknobs](https://github.com/todbot/seeknobs)
 
 and wanted the MacroPad RP2040 to join in the fun.
-
-## Does this work for other boards with StemmaQT?
-
-Short answer: Yes, with caveats
-
-* Boards that can do PWM audio out on the GPIO pin going to StemmaQT SDA 
-  can use the Audio Out side of MacroPadSynthPlug, and do USB MIDI for MIDI input
-
-* Boards that can do UART In on the GPIO pin for StemmaQT SCL can do TRS MIDI input
-
-
-### Tested boards:
-
-* Adafruit MacroPad RP2040 
-
-* QTPy RP2040 with a PIO-based UART libary like [`SerialPIO`](https://arduino-pico.readthedocs.io/en/latest/piouart.html) or [`adafruit_pio_uart`](https://github.com/adafruit/Adafruit_CircuitPython_PIO_UART)
-
-* Adadfruit KB2040 "Keeboar"
-
-* Raspberry Pi Pico / Pico 2 with a [StemmaQT](https://www.adafruit.com/product/4209) / [Qwiic](https://www.sparkfun.com/flexible-qwiic-cable-breadboard-jumper-4-pin.html) breadboard jumper cable
-
 
 ## Are these for sale?
 
